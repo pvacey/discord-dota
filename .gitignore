@@ -1,0 +1,18 @@
+# Dependencies - These are large and can be reinstalled via 'npm install'
+node_modules/
+
+# Environment Variables - This is where your BOT_TOKEN should live!
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Build directories (if using TypeScript)
+dist/
+build/
