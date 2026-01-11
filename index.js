@@ -102,7 +102,7 @@ const mapping = {
     value: 0
   },
   "hero:level": {
-    sound: "stinks.mp3",
+    sound: "quake.mp3",
     condition: ">",
     value: 1
   }
@@ -111,32 +111,41 @@ const mapping = {
 const dotaClients = []
 
 server.events.on('newclient', function(client) {
-  
-  for (const [eventName,v] of Object.entries(mapping)) {
-    client.on(eventName, (v) => {
-      let condition = false;
+  dotaClients.push(client);
+  for (const [eventName, v] of Object.entries(mapping)) {
+    client.on(eventName, (eventVal) => {
+      let play = false;
       switch(v.condition) {
         case "*":
-          condition = true;
-          break
+          play = true;
+          break;
         case ">":
-          condition = v.condition + " > " + v.value;
+          if (eventVal > v.value) {
+            play = true;
+          }
           break;
         case "<":
-          condition = v.condition + " < " + v.value;
+          if (eventVal < v.value) {
+            play = true;
+          }
           break;
         case "===":
-          condition = v.condition + " === " + v.value;
+          if (eventVal === v.value) {
+            play = true;
+          }
           break;
         case "!==":
-          condition = v.condition + " !== " + v.value;
+          if (eventVal !==  v.value) {
+            play = true;
+          }
           break;
         default:
-          console.log(`failed to handle mapping ${eventName = {v}")
+          console.log(`failed to handle mapping ${eventName} = ${v}`)
       }
-      // this is just building a string, won't work but saving progress
-      if (condition) {
-        playSound(v.sound);
+      if (play) {
+        for (const conn of Objects.values(connections)) {
+          conn.playSound(v.sound);
+        } 
       }
     });
   }
