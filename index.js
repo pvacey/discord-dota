@@ -7,6 +7,15 @@ let guild = null;
 let channel = null;
 let connection = null;
 const player = createAudioPlayer();
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildVoiceStates, // Essential for voice!
+	],
+});
+
 
 const addBotToVoice = () => {
   try {
@@ -43,15 +52,6 @@ const playSound = (fileName) => {
   	setTimeout(() => { subscription.unsubscribe() }, 5_000);
   }
 }
-
-const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent,
-		GatewayIntentBits.GuildVoiceStates, // Essential for voice!
-	],
-});
 
 
 client.once('clientReady', async () => {
