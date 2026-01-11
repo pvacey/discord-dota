@@ -72,7 +72,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client)
     } 
     // play sound
-    connections[newState.channelId].playSound("holyshit-quake.mp3")
+    connections[newState.channelId].playSound("quake.mp3")
   }
 
   // user left a channel, cleanup
@@ -143,7 +143,7 @@ server.events.on('newclient', function(client) {
           console.log(`failed to handle mapping ${eventName} = ${v}`)
       }
       if (play) {
-        for (const conn of Objects.values(connections)) {
+        for (const conn of Object.values(connections)) {
           conn.playSound(v.sound);
         } 
       }
