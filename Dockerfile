@@ -1,5 +1,5 @@
 # Use the official Bun image as the base
-FROM oven/bun:1.1 AS base
+FROM oven/bun:1.3.5 AS base
 WORKDIR /usr/src/app
 
 # Install dependencies into a temporary folder to cache them
