@@ -1,6 +1,9 @@
 const { Client, Events, GatewayIntentBits } = require('discord.js');
 const { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } = require('@discordjs/voice');
 
+const downloadAudio = (url) => {
+  //
+}
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
@@ -72,7 +75,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client)
     } 
     // play sound
-    connections[newState.channelId].playSound("quake.mp3")
+    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/y2mate_HOnnyD0.mp3")
   }
 
   // user left a channel, cleanup
@@ -81,7 +84,6 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if (oldState.channel.members.size == 1 && connections[oldState.channelId]) {
       connections[oldState.channelId].connection.destroy()
       delete connections[oldState.channelId]
-
     }
   }
 });
@@ -97,12 +99,12 @@ const server = new d2gsi();
 
 const mapping = {
   "player:deaths": {
-    sound: "stinks.mp3",
+    sound: "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
     condition: ">",
     value: 0
   },
   "hero:level": {
-    sound: "quake.mp3",
+    sound: "https://www.myinstants.com/en/instant/wow-level-up/",
     condition: ">",
     value: 1
   }
