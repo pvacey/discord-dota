@@ -1,9 +1,6 @@
 const { Client, Events, GatewayIntentBits } = require('discord.js');
 const { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } = require('@discordjs/voice');
 
-const downloadAudio = (url) => {
-  //
-}
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
