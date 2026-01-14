@@ -110,8 +110,10 @@ const dotaClients = []
 
 server.events.on('newclient', function(client) {
   dotaClients.push(client);
+  console.log({client})
   for (const [eventName, v] of Object.entries(mapping)) {
     client.on(eventName, (eventVal) => {
+      console.log({client})
       let play = false;
       switch(v.condition) {
         case "*":
