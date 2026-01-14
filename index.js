@@ -110,6 +110,8 @@ const mapping = {
 const dotaClients = []
 
 server.events.on('newclient', function(client) {
+  console.log("total clients: " + dotaClients.length)
+  console.log("client IP: " + client.ip)
   dotaClients.push(client);
   for (const [eventName, v] of Object.entries(mapping)) {
     client.on(eventName, (eventVal) => {
