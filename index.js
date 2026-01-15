@@ -24,15 +24,16 @@ class VoiceConnection {
     this.connection.on(VoiceConnectionStatus.Disconnected, (oldState, newState) => {
       console.log(`voice connection closed @${this.guild.name} -> ${this.channel.name}`);
     });
+    
+    this.player.on(AudioPlayerStatus.Playing, (oldState, newState) => {
+      console.log(`playing sound @${this.guild.name} -> ${this.channel.name}`);
+    });
   }
 
   playSound(fileName) {
+    console.log('invoked once')
     const subscription = this.connection.subscribe(this.player);
     const resource = createAudioResource(fileName);
-    
-    this.player.on(AudioPlayerStatus.Playing, (oldState, newState) => {
-      console.log(`playing ${fileName} @${this.guild.name} -> ${this.channel.name}`);
-    });
 
     this.player.play(resource);
 
@@ -93,16 +94,22 @@ client.login(process.env.DISCORD_TOKEN);
 ///////////////////////////////////////////////////////////
 
 const mapping = {
-  "player:deaths": {
+  "player.deaths": {
     sound: "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
     condition: ">",
     value: 0
   },
-  "hero:level": {
+  "hero.level": {
     sound: "https://www.myinstants.com/en/instant/wow-level-up/",
     condition: ">",
-    value: 1
+    value: 10
+  },
+  "player.gold": {
+    sound: "https://www.myinstants.com/en/instant/wow-level-up/",
+    condition: ">",
+    value: 300
   }
+
 }
 
 const recursiveDiff = (prefix, changed, body) => {
@@ -112,9 +119,41 @@ const recursiveDiff = (prefix, changed, body) => {
         recursiveDiff(prefix+key+".", changed[key], body[key]);
       }
     } else {
-      // Got a key
       if (body[key] != null) {
-        console.log(prefix+key, body[key]);
+        handleGameEvent(prefix+key, body[key]);
+      }
+    }
+  }
+}
+
+const handleGameEvent = (eventName, value) => {
+  console.log(`checking mapping to handle ${eventName}=${value}`)
+
+  if (mapping[eventName]) {
+    const mappingValue = mapping[eventName].value;
+    let play = false;
+    switch (mapping[eventName].condition) {
+      case "*":
+        play = true;
+        break;
+      case ">":
+        if (value > mappingValue) play = true; 
+        break;
+      case "<":
+        if (value < mappingValue) play = true; 
+        break;
+      case "===":
+        if (value === mappingValue) play = true; 
+        break;
+      case "!==":
+        if (value !== mappingValue) play = true; 
+        break;
+    }
+    if (play) {
+      console.log(Object.keys(connections).length)
+      for (const conn of Object.values(connections)) {
+        console.log('should play');
+        conn.playSound(mapping[eventName].sound);
       }
     }
   }
@@ -124,20 +163,11 @@ const app = new Hono()
 
 app.post('/', async (c) => {
   const payload = await c.req.json();
+  console.log('...............')
   if (payload.previously) {
-    for (const key of Object.keys(payload.previously)) {
-      console.log('////////////////////////');
-      console.log(key)
-      console.log(payload.previously[key])
-      console.log('----')
-      console.log(payload[key])
-      console.log()
-    }
     recursiveDiff("",payload.previously, payload )
   }
   return c.text('OK', 200);
 });
-
-
 
 export default app
