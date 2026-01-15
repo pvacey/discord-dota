@@ -74,10 +74,10 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client)
     } 
     // play sound
-    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/y2mate_HOnnyD0.mp3")
+    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/hello-your-computer-has-virus-sound-effect.mp3")
   }
 
-  // user left a channel, cleanup
+  // user left a channel, cleanup4
   if (oldState.channelId && !newState.channelId) {
     console.log(`${oldState.member.user.tag} left ${oldState.channel.name}`);
     if (oldState.channel.members.size == 1 && connections[oldState.channelId]) {
@@ -100,16 +100,10 @@ const mapping = {
     value: 0
   },
   "hero.level": {
-    sound: "https://www.myinstants.com/en/instant/wow-level-up/",
+    sound: "https://cdn.discordapp.com/attachments/201091962978304000/1461491755026223319/output.mp3?ex=696abfc3&is=69696e43&hm=cde7de9efce37de9a3291f84cf426cf6edab19c43bb381a6f626ef3d236a11a2&",
     condition: ">",
     value: 10
-  },
-  "player.gold": {
-    sound: "https://www.myinstants.com/en/instant/wow-level-up/",
-    condition: ">",
-    value: 300
   }
-
 }
 
 const recursiveDiff = (prefix, changed, body) => {
@@ -150,9 +144,7 @@ const handleGameEvent = (eventName, value) => {
         break;
     }
     if (play) {
-      console.log(Object.keys(connections).length)
       for (const conn of Object.values(connections)) {
-        console.log('should play');
         conn.playSound(mapping[eventName].sound);
       }
     }
