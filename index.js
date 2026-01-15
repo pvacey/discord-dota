@@ -1,5 +1,6 @@
-const { Client, Events, GatewayIntentBits } = require('discord.js');
-const { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } = require('@discordjs/voice');
+import { Hono } from 'hono'
+import { Client, Events, GatewayIntentBits } from 'discord.js'
+import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } from '@discordjs/voice'
 
 
 class VoiceConnection {
@@ -91,9 +92,6 @@ client.login(process.env.DISCORD_TOKEN);
 // DOTA2 GSI Server                                      //
 ///////////////////////////////////////////////////////////
 
-const d2gsi = require('dota2-gsi');
-const server = new d2gsi();
-
 const mapping = {
   "player:deaths": {
     sound: "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
@@ -107,47 +105,39 @@ const mapping = {
   }
 }
 
-const dotaClients = []
+const recursiveDiff = (prefix, changed, body) => {
+  Object.keys(changed).forEach(function(key) {
+    if (typeof(changed[key]) == 'object') {
+      if (body[key] != null) { // safety check
+        recursiveDiff(prefix+key+".", changed[key], body[key]);
+      }
+    } else {
+      // Got a key
+      if (body[key] != null) {
+        console.log(prefix+key, body[key]);
+      }
+    }
+  });
+}
 
-server.events.on('newclient', function(client) {
-  console.log("total clients: " + dotaClients.length)
-  console.log("client IP: " + client.ip)
-  dotaClients.push(client);
-  for (const [eventName, v] of Object.entries(mapping)) {
-    client.on(eventName, (eventVal) => {
-      let play = false;
-      switch(v.condition) {
-        case "*":
-          play = true;
-          break;
-        case ">":
-          if (eventVal > v.value) {
-            play = true;
-          }
-          break;
-        case "<":
-          if (eventVal < v.value) {
-            play = true;
-          }
-          break;
-        case "===":
-          if (eventVal === v.value) {
-            play = true;
-          }
-          break;
-        case "!==":
-          if (eventVal !==  v.value) {
-            play = true;
-          }
-          break;
-        default:
-          console.log(`failed to handle mapping ${eventName} = ${v}`)
-      }
-      if (play) {
-        for (const conn of Object.values(connections)) {
-          conn.playSound(v.sound);
-        } 
-      }
-    });
+const app = new Hono()
+
+app.post('/', async (c) => {
+  const payload = await c.req.json();
+  if (payload.previously) {
+    for (const key of Object.keys(payload.previously)) {
+      console.log('////////////////////////');
+      console.log(key)
+      console.log(payload.previously[key])
+      console.log('----')
+      console.log(payload[key])
+      console.log()
+    }
+    recursiveDiff("",payload.previously, payload )
   }
+  return c.text('OK', 200);
 });
+
+
+
+export default app
