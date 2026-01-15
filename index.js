@@ -106,7 +106,7 @@ const mapping = {
 }
 
 const recursiveDiff = (prefix, changed, body) => {
-  Object.keys(changed).forEach(function(key) {
+  for (const key of Object.keys(changed)) {
     if (typeof(changed[key]) == 'object') {
       if (body[key] != null) { // safety check
         recursiveDiff(prefix+key+".", changed[key], body[key]);
@@ -117,7 +117,7 @@ const recursiveDiff = (prefix, changed, body) => {
         console.log(prefix+key, body[key]);
       }
     }
-  });
+  }
 }
 
 const app = new Hono()
