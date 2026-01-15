@@ -1,5 +1,7 @@
-const { Client, Events, GatewayIntentBits } = require('discord.js');
-const { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } = require('@discordjs/voice');
+import { Hono } from 'hono'
+import { Client, Events, GatewayIntentBits } from 'discord.js'
+import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } from '@discordjs/voice'
+
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
@@ -22,15 +24,16 @@ class VoiceConnection {
     this.connection.on(VoiceConnectionStatus.Disconnected, (oldState, newState) => {
       console.log(`voice connection closed @${this.guild.name} -> ${this.channel.name}`);
     });
+    
+    this.player.on(AudioPlayerStatus.Playing, (oldState, newState) => {
+      console.log(`playing sound @${this.guild.name} -> ${this.channel.name}`);
+    });
   }
 
   playSound(fileName) {
+    console.log('invoked once')
     const subscription = this.connection.subscribe(this.player);
     const resource = createAudioResource(fileName);
-    
-    this.player.on(AudioPlayerStatus.Playing, (oldState, newState) => {
-      console.log(`playing ${fileName} @${this.guild.name} -> ${this.channel.name}`);
-    });
 
     this.player.play(resource);
 
@@ -71,10 +74,10 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client)
     } 
     // play sound
-    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/y2mate_HOnnyD0.mp3")
+    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/hello-your-computer-has-virus-sound-effect.mp3")
   }
 
-  // user left a channel, cleanup
+  // user left a channel, cleanup4
   if (oldState.channelId && !newState.channelId) {
     console.log(`${oldState.member.user.tag} left ${oldState.channel.name}`);
     if (oldState.channel.members.size == 1 && connections[oldState.channelId]) {
@@ -90,62 +93,73 @@ client.login(process.env.DISCORD_TOKEN);
 // DOTA2 GSI Server                                      //
 ///////////////////////////////////////////////////////////
 
-const d2gsi = require('dota2-gsi');
-const server = new d2gsi();
-
 const mapping = {
-  "player:deaths": {
+  "player.deaths": {
     sound: "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
     condition: ">",
     value: 0
   },
-  "hero:level": {
-    sound: "https://www.myinstants.com/en/instant/wow-level-up/",
+  "hero.level": {
+    sound: "https://cdn.discordapp.com/attachments/201091962978304000/1461491755026223319/output.mp3?ex=696abfc3&is=69696e43&hm=cde7de9efce37de9a3291f84cf426cf6edab19c43bb381a6f626ef3d236a11a2&",
     condition: ">",
-    value: 1
+    value: 10
   }
 }
 
-const dotaClients = []
-
-server.events.on('newclient', function(client) {
-  dotaClients.push(client);
-  for (const [eventName, v] of Object.entries(mapping)) {
-    client.on(eventName, (eventVal) => {
-      let play = false;
-      switch(v.condition) {
-        case "*":
-          play = true;
-          break;
-        case ">":
-          if (eventVal > v.value) {
-            play = true;
-          }
-          break;
-        case "<":
-          if (eventVal < v.value) {
-            play = true;
-          }
-          break;
-        case "===":
-          if (eventVal === v.value) {
-            play = true;
-          }
-          break;
-        case "!==":
-          if (eventVal !==  v.value) {
-            play = true;
-          }
-          break;
-        default:
-          console.log(`failed to handle mapping ${eventName} = ${v}`)
+const recursiveDiff = (prefix, changed, body) => {
+  for (const key of Object.keys(changed)) {
+    if (typeof(changed[key]) == 'object') {
+      if (body[key] != null) { // safety check
+        recursiveDiff(prefix+key+".", changed[key], body[key]);
       }
-      if (play) {
-        for (const conn of Object.values(connections)) {
-          conn.playSound(v.sound);
-        } 
+    } else {
+      if (body[key] != null) {
+        handleGameEvent(prefix+key, body[key]);
       }
-    });
+    }
   }
+}
+
+const handleGameEvent = (eventName, value) => {
+  console.log(`checking mapping to handle ${eventName}=${value}`)
+
+  if (mapping[eventName]) {
+    const mappingValue = mapping[eventName].value;
+    let play = false;
+    switch (mapping[eventName].condition) {
+      case "*":
+        play = true;
+        break;
+      case ">":
+        if (value > mappingValue) play = true; 
+        break;
+      case "<":
+        if (value < mappingValue) play = true; 
+        break;
+      case "===":
+        if (value === mappingValue) play = true; 
+        break;
+      case "!==":
+        if (value !== mappingValue) play = true; 
+        break;
+    }
+    if (play) {
+      for (const conn of Object.values(connections)) {
+        conn.playSound(mapping[eventName].sound);
+      }
+    }
+  }
+}
+
+const app = new Hono()
+
+app.post('/', async (c) => {
+  const payload = await c.req.json();
+  console.log('...............')
+  if (payload.previously) {
+    recursiveDiff("",payload.previously, payload )
+  }
+  return c.text('OK', 200);
 });
 
+export default app
