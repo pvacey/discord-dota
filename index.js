@@ -103,7 +103,7 @@ const mapping = {
     sound: "https://cdn.discordapp.com/attachments/201091962978304000/1461491755026223319/output.mp3?ex=696abfc3&is=69696e43&hm=cde7de9efce37de9a3291f84cf426cf6edab19c43bb381a6f626ef3d236a11a2&",
     condition: ">",
     value: 10
-  }
+  },
   "player.kills": {
     sound: "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3",
     condition: "===",
