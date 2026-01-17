@@ -104,6 +104,11 @@ const mapping = {
     condition: ">",
     value: 10
   }
+  "player.kills": {
+    sound: "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3",
+    condition: "===",
+    value: 1
+  }
 }
 
 const recursiveDiff = (prefix, changed, body) => {
