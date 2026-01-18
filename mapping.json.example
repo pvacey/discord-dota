@@ -1,0 +1,20 @@
+[
+  {
+    "event": "player.deaths",
+    "sound": "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
+    "condition": ">",
+    "value": 0
+  },
+  {
+    "event": "player.kills",
+    "sound": "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3",
+    "condition": "===",
+    "value": 1
+  },
+  {
+    "event": "player.kills",
+    "sound": "https://www.myinstants.com/media/sounds/anime-ahh.mp3",
+    "condition": ">",
+    "value": 1
+  }
+]

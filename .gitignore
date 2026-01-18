@@ -16,3 +16,5 @@ Thumbs.db
 # Build directories (if using TypeScript)
 dist/
 build/
+
+mapping.json
