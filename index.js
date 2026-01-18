@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { Client, Events, GatewayIntentBits } from 'discord.js'
 import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } from '@discordjs/voice'
+import { watch } from 'fs';
 
 
 class VoiceConnection {
@@ -93,23 +94,6 @@ client.login(process.env.DISCORD_TOKEN);
 // DOTA2 GSI Server                                      //
 ///////////////////////////////////////////////////////////
 
-const mapping = {
-  "player.deaths": {
-    sound: "https://www.myinstants.com/media/sounds/oh-brother-this-guy-stinks.mp3",
-    condition: ">",
-    value: 0
-  },
-  "player.kills": {
-    sound: "https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3",
-    condition: "===",
-    value: 1
-  },
-  "player.kills": {
-    sound: "https://www.myinstants.com/media/sounds/anime-ahh.mp3",
-    condition: "===",
-    value: 2
-  }
-}
 
 const recursiveDiff = (prefix, changed, body) => {
   for (const key of Object.keys(changed)) {
@@ -127,42 +111,51 @@ const recursiveDiff = (prefix, changed, body) => {
 
 const handleGameEvent = (eventName, value) => {
   console.log(`checking mapping to handle ${eventName}=${value}`)
+  
+  for (const obj of mapping) {
+    if (obj.event !== eventName) {
+      continue;
+    }
 
-  if (mapping[eventName]) {
-    const mappingValue = mapping[eventName].value;
     let play = false;
-    switch (mapping[eventName].condition) {
+    switch (obj.condition) {
       case "*":
         play = true;
         break;
       case ">":
-        if (value > mappingValue) play = true; 
+        if (value > obj.value) play = true; 
         break;
       case "<":
-        if (value < mappingValue) play = true; 
+        if (value < obj.value) play = true; 
         break;
       case "===":
-        if (value === mappingValue) play = true; 
+        if (value === obj.value) play = true; 
         break;
       case "!==":
-        if (value !== mappingValue) play = true; 
+        if (value !== obj.value) play = true; 
         break;
     }
     if (play) {
+      console.log({obj})
       for (const conn of Object.values(connections)) {
-        conn.playSound(mapping[eventName].sound);
+        conn.playSound(obj.sound);
       }
     }
   }
 }
 
+let config = Bun.file("mapping.json");
+let mapping = await config.json();
+
 const app = new Hono()
 
 app.post('/', async (c) => {
   const payload = await c.req.json();
+  config = Bun.file("mapping.json");
+  mapping = await config.json();
   console.log('...............')
   if (payload.previously) {
-    recursiveDiff("",payload.previously, payload )
+    recursiveDiff("",payload.previously, payload)
   }
   return c.text('OK', 200);
 });
