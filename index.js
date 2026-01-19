@@ -144,15 +144,16 @@ const handleGameEvent = (eventName, value) => {
   }
 }
 
-let config = Bun.file("mapping.json");
-let mapping = await config.json();
+const configURL = 'http://localhost:4566/test/mapping.json';
+let response = await fetch(configURL);
+let mapping = await response.json();
 
 const app = new Hono()
 
 app.post('/', async (c) => {
   const payload = await c.req.json();
-  config = Bun.file("mapping.json");
-  mapping = await config.json();
+  response = await fetch(configURL);
+  mapping = await response.json();
   console.log('...............')
   if (payload.previously) {
     recursiveDiff("",payload.previously, payload)
