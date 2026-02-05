@@ -75,7 +75,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client)
     } 
     // play sound
-    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/hello-your-computer-has-virus-sound-effect.mp3")
+    connections[newState.channelId].playSound("https://www.myinstants.com/media/sounds/open-aim.mp3")
   }
 
   // user left a channel, cleanup4
