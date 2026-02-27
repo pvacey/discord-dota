@@ -163,6 +163,15 @@ const handleGameEvent = async (eventName, value, context) => {
   console.log(`checking mapping to handle ${eventName}=${value}`)
 
   if (eventName === "map.game_state" && value === "DOTA_GAMERULES_STATE_POST_GAME") {
+    if (suppressReport) {
+      return
+    }
+    
+    suppressReport = true
+    setTimeout(() => {
+      suppressReport = false
+    }, 5000);
+
     const f = Bun.file('settings.json');
     if (f.exists()) {
       let settings = await f.json()
@@ -205,6 +214,7 @@ const handleGameEvent = async (eventName, value, context) => {
 
 let config = Bun.file("mapping.json");
 let mapping = await config.json();
+let suppressReport = false;
 
 const app = new Hono()
 
