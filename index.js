@@ -162,10 +162,7 @@ const recursiveDiff = (prefix, changed, body, context) => {
 const handleGameEvent = async (eventName, value, context) => {
   console.log(`checking mapping to handle ${eventName}=${value}`)
 
-  if (eventName === "map.game_state" && value === "DOTA_GAMERULES_STATE_POST_GAME") {
-    if (suppressReport) {
-      return
-    }
+  if (eventName === "map.game_state" && value === "DOTA_GAMERULES_STATE_POST_GAME" && !suppressReport) {
     
     suppressReport = true
     setTimeout(() => {
