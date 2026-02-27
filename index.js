@@ -1,8 +1,10 @@
-import { Hono } from 'hono'
-import { Client, Events, GatewayIntentBits } from 'discord.js'
+import { Hono } from 'hono';
+import { Client, Collection, Events, GatewayIntentBits, MessageFlags } from 'discord.js';
 import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceChannel, VoiceConnectionStatus, AudioPlayerStatus } from '@discordjs/voice'
 import { watch } from 'fs';
-
+import fs from 'node:fs';
+import path from 'node:path';
+import { token } from './config.json';
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
@@ -61,6 +63,55 @@ const client = new Client({
   ],
 });
 
+client.commands = new Collection();
+
+const foldersPath = path.join(__dirname, 'commands');
+const commandFolders = fs.readdirSync(foldersPath);
+
+// straight up copy past from the discord.js docs, this loads every command in the commands directory
+for (const folder of commandFolders) {
+	const commandsPath = path.join(foldersPath, folder);
+	const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.js'));
+	for (const file of commandFiles) {
+		const filePath = path.join(commandsPath, file);
+		const command = require(filePath);
+		// Set a new item in the Collection with the key as the command name and the value as the exported module
+		if ('data' in command && 'execute' in command) {
+			client.commands.set(command.data.name, command);
+		} else {
+			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+		}
+	}
+}
+
+client.on(Events.InteractionCreate, async (interaction) => {
+	if (!interaction.isChatInputCommand()) return;
+	const command = interaction.client.commands.get(interaction.commandName);
+
+	if (!command) {
+		console.error(`No command matching ${interaction.commandName} was found.`);
+		return;
+	}
+
+	try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		if (interaction.replied || interaction.deferred) {
+			await interaction.followUp({
+				content: 'There was an error while executing this command!',
+				flags: MessageFlags.Ephemeral,
+			});
+		} else {
+			await interaction.reply({
+				content: 'There was an error while executing this command!',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+	}
+});
+
+
 client.once(Events.ClientReady, async () => {
   console.log(`bot logged in as ${client.user.tag}`);
 });
@@ -95,23 +146,32 @@ client.login(process.env.DISCORD_TOKEN);
 ///////////////////////////////////////////////////////////
 
 
-const recursiveDiff = (prefix, changed, body) => {
+const recursiveDiff = (prefix, changed, body, context) => {
   for (const key of Object.keys(changed)) {
     if (typeof(changed[key]) == 'object') {
       if (body[key] != null) { // safety check
-        recursiveDiff(prefix+key+".", changed[key], body[key]);
+        recursiveDiff(prefix+key+".", changed[key], body[key], context);
       }
     } else {
       if (body[key] != null) {
-        handleGameEvent(prefix+key, body[key]);
+        handleGameEvent(prefix+key, body[key], context);
       }
     }
   }
 }
 
-const handleGameEvent = (eventName, value) => {
+const handleGameEvent = async (eventName, value, context) => {
   console.log(`checking mapping to handle ${eventName}=${value}`)
-  
+
+  if (eventName === "map.game_state" && value === "DOTA_GAMERULES_STATE_POST_GAME") {
+    const f = Bun.file('settings.json');
+    if (f.exists()) {
+      let settings = await f.json()
+      const channel = await client.channels.fetch(settings.channel);
+      channel.send(`https://www.opendota.com/matches/${context.matchID}`);
+    }
+  }
+
   for (const obj of mapping) {
     if (obj.event !== eventName) {
       continue;
@@ -155,7 +215,11 @@ app.post('/', async (c) => {
   mapping = await config.json();
   console.log('...............')
   if (payload.previously) {
-    recursiveDiff("",payload.previously, payload)
+    const ctx = {
+      playerID: payload.player.steamid,
+      matchID: payload.map.matchid
+    }
+    recursiveDiff("",payload.previously, payload, ctx)
   }
   return c.text('OK', 200);
 });
