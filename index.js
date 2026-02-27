@@ -34,16 +34,11 @@ class VoiceConnection {
 
   playSound(fileName) {
     console.log('invoked once')
-    const subscription = this.connection.subscribe(this.player);
-    const resource = createAudioResource(fileName);
-
-    this.player.play(resource);
-
-    if (subscription) {
-      setTimeout(() => {
-        subscription.unsubscribe()
-      }, 5_000);
+    if (!this.subscription) {
+      this.subscription = this.connection.subscribe(this.player);
     }
+    const resource = createAudioResource(fileName);
+    this.player.play(resource);
   }
 }
 
