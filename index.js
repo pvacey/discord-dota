@@ -4,7 +4,6 @@ import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceC
 import { watch } from 'fs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { token } from './config.json';
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
