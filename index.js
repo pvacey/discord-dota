@@ -200,6 +200,8 @@ const handleGameEvent = async (eventName, value, context) => {
       for (const conn of Object.values(connections)) {
         conn.playSound(obj.sound);
       }
+      // exit the loop, only play a sound on the first match
+      break
     }
   }
 }
