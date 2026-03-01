@@ -212,6 +212,28 @@ let suppressReport = false;
 
 const app = new Hono()
 
+app.get('/api/mappings', async (c) => {
+  const f = Bun.file("mapping.json");
+  const data = await f.json();
+  return c.json(data);
+});
+
+app.put('/api/mappings', async (c) => {
+  const data = await c.req.json();
+  await Bun.write("mapping.json", JSON.stringify(data, null, 2));
+  mapping = data;
+  return c.json({ success: true });
+});
+
+app.get('/', async (c) => {
+  return c.redirect('/index.html');
+});
+
+app.get('/index.html', async (c) => {
+  const file = Bun.file('./public/index.html');
+  return c.html(await file.text());
+});
+
 app.post('/', async (c) => {
   const payload = await c.req.json();
   config = Bun.file("mapping.json");
