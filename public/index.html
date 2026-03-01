@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapping Editor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Reaver';
+      src: url('https://cdn.steamstatic.com/apps/dota2/fonts/Reaver-Regular.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --input-bg: #0d1117;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --accent-subtle: rgba(88, 166, 255, 0.1);
+      --danger: #f85149;
+      --success: #3fb950;
+      --purple: #a371f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: inherit; }
+    body { font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      min-height: 100vh;
+      padding: 40px 20px;
+      background-image: 
+        radial-gradient(ellipse at top left, rgba(88, 166, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(163, 113, 247, 0.06) 0%, transparent 50%);
+    }
+    h1 { 
+      font-size: 48px; 
+      font-family: 'Reaver', sans-serif;
+      font-weight: normal;
+      margin-bottom: 32px; 
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    h1 img {
+      height: 64px;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    .card { 
+      background: var(--card-bg); 
+      border: 1px solid var(--border); 
+      border-radius: 16px; 
+      padding: 28px; 
+      margin-bottom: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    .card-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 24px; 
+    }
+    h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    
+    .field-group {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .field-group .field, .mapping-item .field {
+      position: relative;
+    }
+    
+    .field-group .field label, .mapping-item .field label {
+      position: absolute;
+      margin-top: -16px;
+    }
+    .field { flex: 1; }
+    .field.small, .field.tiny { position: relative; flex: 0 0 90px; }
+    .field.tiny { flex: 0 0 80px; }
+    
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    
+    input, select { 
+      width: 100%;
+      padding: 12px 14px; 
+      border-radius: 10px; 
+      border: 1px solid var(--border); 
+      background: var(--input-bg); 
+      color: var(--text); 
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-subtle); }
+    input:hover, select:hover { border-color: rgba(88, 166, 255, 0.4); }
+    input::placeholder { color: var(--text-muted); }
+    select { cursor: pointer; }
+    
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; margin: 0; 
+    }
+    input[type=number] { -moz-appearance: textfield; }
+    input:disabled, select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    button { 
+      padding: 12px 24px; 
+      border-radius: 10px; 
+      border: none; 
+      cursor: pointer; 
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-primary { 
+      background: linear-gradient(135deg, var(--accent), #3d8bfd); 
+      color: #000; 
+      box-shadow: 0 4px 16px rgba(88, 166, 255, 0.3);
+    }
+    .btn-primary:hover { 
+      background: linear-gradient(135deg, var(--accent-hover), #5a9efe); 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(88, 166, 255, 0.4);
+    }
+    
+    .mapping-item { 
+      background: var(--input-bg); 
+      border: 1px solid var(--border);
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 16px; 
+      transition: all 0.25s ease;
+    }
+    .mapping-item:hover {
+      border-color: rgba(88, 166, 255, 0.4);
+    }
+    .mapping-item.reorder { opacity: 0.6; transform: scale(0.99); }
+    .mapping-item.placed { animation: highlight 0.4s ease; }
+    .mapping-item .mapping-row { flex: 1; display: flex; gap: 10px; align-items: center; }
+    .mapping-item .field { margin-bottom: 0; }
+    .mapping-item .field:first-child { flex: 0 0 180px; }
+    .mapping-item .field:nth-child(2) { flex: 2; }
+    
+    .mapping-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+      align-items: center;
+    }
+    .btn-icon { 
+      width: 36px; 
+      height: 36px; 
+      padding: 0; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      border-radius: 8px;
+      background: var(--card-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .btn-icon:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); background: var(--accent-subtle); }
+    .btn-icon:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    .btn-primary:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-icon.danger { background: rgba(248, 81, 73, 0.15); color: var(--danger); border-color: transparent; }
+    .btn-icon.danger:hover:not(:disabled) { background: var(--danger); color: #fff; border-color: var(--danger); }
+    
+    .order-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .mapping-item { 
+      display: flex;
+      align-items: center;
+      background: var(--input-bg); 
+      border: 1px solid var(--border);
+      border-radius: 12px; 
+      padding: 20px; 
+      margin-bottom: 16px; 
+      transition: all 0.25s ease;
+      gap: 10px;
+    }
+    
+    
+    .empty { text-align: center; padding: 40px; color: var(--text-muted); }
+    .msg { 
+      position: fixed; 
+      top: 24px; 
+      right: 24px; 
+      padding: 16px 24px; 
+      border-radius: 12px; 
+      font-size: 14px;
+      font-weight: 600;
+      transform: translateX(120%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000;
+    }
+    .msg.show { transform: translateX(0); }
+    .msg.success { background: linear-gradient(135deg, var(--success), #2ea043); color: #fff; box-shadow: 0 8px 24px rgba(63, 185, 80, 0.4); }
+    .msg.error { background: linear-gradient(135deg, var(--danger), #da3633); color: #fff; box-shadow: 0 8px 24px rgba(248, 81, 73, 0.4); }
+    @keyframes highlight { 0% { background: rgba(88, 166, 255, 0.2); border-color: var(--accent); } 100% { background: var(--input-bg); } }
+    
+    @media (max-width: 700px) {
+      .mapping-item { flex-wrap: wrap; }
+      .mapping-row { flex-wrap: wrap; width: 100%; }
+      .mapping-item .field:first-child, .mapping-item .field:nth-child(2) { flex: 1 1 100%; }
+      .order-btns { flex-direction: row; margin-right: 0; margin-bottom: 12px; }
+      .mapping-actions { margin-left: 0; margin-top: 12px; width: 100%; justify-content: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1><img src="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png" alt="">OBSERVER WARD</h1>
+    <div id="msg" class="msg"></div>
+    
+    <div class="card">
+      <h3>Add Mapping</h3>
+      <div style="margin-top: 20px;">
+        <div class="field-group">
+          <div class="field">
+            <label>Event Name</label>
+            <input type="text" id="newEvent" placeholder="e.g., player.kills">
+          </div>
+          <div class="field">
+            <label>Audio Clip URL</label>
+            <input type="text" id="newSound" placeholder="sound URL">
+          </div>
+          <div class="field small">
+            <label>Condition</label>
+            <select id="newCondition" onchange="updateValueField()">
+              <option value=">">&gt;</option>
+              <option value="<">&lt;</option>
+              <option value="===" selected>=</option>
+              <option value="!==">!=</option>
+              <option value="*">*</option>
+            </select>
+          </div>
+          <div class="field tiny">
+            <label>Value</label>
+            <input type="text" id="newValue" value="">
+          </div>
+          <button class="btn-primary" onclick="addMapping()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3>Mappings</h3>
+        <button class="btn-primary" onclick="saveAll()">Save Changes</button>
+      </div>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script>
+    let mappings = [];
+    let originalMappings = [];
+
+    async function load() {
+      const res = await fetch('/api/mappings');
+      mappings = await res.json();
+      originalMappings = JSON.parse(JSON.stringify(mappings));
+      render();
+    }
+
+    function isDirty() {
+      return JSON.stringify(mappings) !== JSON.stringify(originalMappings);
+    }
+
+    function updateSaveButton() {
+      document.querySelector('.card-header .btn-primary').disabled = !isDirty();
+    }
+
+    function render() {
+      const list = document.getElementById('list');
+      if (mappings.length === 0) {
+        list.innerHTML = '<div class="empty">No mappings yet. Add one above.</div>';
+        return;
+      }
+      list.innerHTML = mappings.map((m, i) => `
+        <div class="mapping-item">
+          <div class="order-btns">
+            <button class="btn-icon" onclick="move(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+            <button class="btn-icon" onclick="move(${i}, 1)" ${i === mappings.length - 1 ? 'disabled' : ''}>▼</button>
+          </div>
+          <div class="mapping-row">
+            <div class="field">
+              <label>Event Name</label>
+              <input type="text" value="${m.event}" onchange="update(${i}, 'event', this.value)" placeholder="event">
+            </div>
+            <div class="field">
+              <label>Audio Clip URL</label>
+              <input type="text" value="${m.sound}" onchange="update(${i}, 'sound', this.value)" placeholder="sound URL">
+            </div>
+            <div class="field small">
+              <label>Condition</label>
+              <select onchange="update(${i}, 'condition', this.value); updateRowValueField(${i}, this.value)">
+                <option value=">" ${m.condition === '>' ? 'selected' : ''}>&gt;</option>
+                <option value="<" ${m.condition === '<' ? 'selected' : ''}>&lt;</option>
+                <option value="===" ${m.condition === '===' || !m.condition ? 'selected' : ''}>=</option>
+                <option value="!==" ${m.condition === '!==' ? 'selected' : ''}>!=</option>
+                <option value="*" ${m.condition === '*' ? 'selected' : ''}>*</option>
+              </select>
+            </div>
+            <div class="field tiny">
+              <label>Value</label>
+              <input type="text" value="${m.condition === '*' ? '' : (m.value !== undefined ? m.value : '')}" ${m.condition === '*' ? 'disabled' : ''} onchange="update(${i}, 'value', this.value)">
+            </div>
+          </div>
+          <div class="mapping-actions">
+            <button class="btn-icon danger" onclick="remove(${i})">✕</button>
+          </div>
+        </div>
+      `).join('');
+      updateSaveButton();
+    }
+
+    function update(idx, key, val) {
+      if (key === 'value') val = parseValue(val);
+      mappings[idx][key] = val;
+      updateSaveButton();
+    }
+
+    function updateRowValueField(idx, condition) {
+      const items = document.querySelectorAll('.mapping-item');
+      const valueInput = items[idx].querySelector('.field.tiny input');
+      valueInput.disabled = condition === '*';
+      if (condition === '*') {
+        valueInput.value = '';
+      }
+    }
+
+    function parseValue(val) {
+      if (val === '' || val === undefined || val === null) return undefined;
+      if (val === 'true') return true;
+      if (val === 'false') return false;
+      const num = Number(val);
+      if (!isNaN(num)) return num;
+      return String(val);
+    }
+
+    function addMapping() {
+      const event = document.getElementById('newEvent').value.trim();
+      const sound = document.getElementById('newSound').value.trim();
+      const condition = document.getElementById('newCondition').value;
+      const rawValue = document.getElementById('newValue').value;
+      const value = condition === '*' ? undefined : parseValue(rawValue);
+      
+      if (!event || !sound) {
+        showMsg('Event and sound are required', 'error');
+        return;
+      }
+      
+      mappings.push({ event, sound, condition, value });
+      render();
+      
+      const items = document.querySelectorAll('.mapping-item');
+      items[items.length - 1].classList.add('placed');
+      
+      clearForm();
+      showMsg('Mapping added', 'success');
+    }
+
+    function remove(idx) {
+      const items = document.querySelectorAll('.mapping-item');
+      items[idx].style.opacity = '0';
+      items[idx].style.transform = 'translateX(-20px) scale(0.95)';
+      
+      setTimeout(() => {
+        mappings.splice(idx, 1);
+        render();
+      }, 200);
+    }
+
+    function move(idx, dir) {
+      if (idx + dir < 0 || idx + dir >= mappings.length) return;
+      const temp = mappings[idx];
+      mappings[idx] = mappings[idx + dir];
+      mappings[idx + dir] = temp;
+      
+      render();
+    }
+
+    async function saveAll() {
+      const res = await fetch('/api/mappings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mappings)
+      });
+      if (res.ok) {
+        originalMappings = JSON.parse(JSON.stringify(mappings));
+        updateSaveButton();
+        showMsg('Saved successfully!', 'success');
+      }
+      else showMsg('Save failed', 'error');
+    }
+
+    function clearForm() {
+      document.getElementById('newEvent').value = '';
+      document.getElementById('newSound').value = '';
+      document.getElementById('newCondition').value = '===';
+      document.getElementById('newValue').value = '';
+      updateValueField();
+    }
+
+    function updateValueField() {
+      const condition = document.getElementById('newCondition').value;
+      const valueField = document.getElementById('newValue');
+      valueField.disabled = condition === '*';
+      if (condition === '*') {
+        valueField.value = '';
+      }
+    }
+
+    function showMsg(text, type) {
+      const el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = 'msg ' + type + ' show';
+      setTimeout(() => el.className = 'msg', 3000);
+    }
+
+    load();
+  </script>
+</body>
+</html>
