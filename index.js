@@ -206,9 +206,17 @@ const handleGameEvent = async (eventName, value, context) => {
   }
 }
 
-let config = Bun.file("mapping.json");
+const configFile = "mapping.json";
+let config = Bun.file(configFile);
 let mapping = await config.json();
 let suppressReport = false;
+
+watch(configFile, async (event) => {
+  if (event === "change") {
+    mapping = await config.json();
+    console.log({mapping})
+  }
+});
 
 const app = new Hono()
 
@@ -226,18 +234,12 @@ app.put('/api/mappings', async (c) => {
 });
 
 app.get('/', async (c) => {
-  return c.redirect('/index.html');
-});
-
-app.get('/index.html', async (c) => {
   const file = Bun.file('./public/index.html');
   return c.html(await file.text());
 });
 
 app.post('/', async (c) => {
   const payload = await c.req.json();
-  config = Bun.file("mapping.json");
-  mapping = await config.json();
   console.log('...............')
   if (payload.previously) {
     const ctx = {

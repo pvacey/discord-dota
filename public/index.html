@@ -384,11 +384,11 @@
         return;
       }
       
-      mappings.push({ event, sound, condition, value });
+      mappings.unshift({ event, sound, condition, value });
       render();
       
       const items = document.querySelectorAll('.mapping-item');
-      items[items.length - 1].classList.add('placed');
+      items[0].classList.add('placed');
       
       clearForm();
       showMsg('Mapping added', 'success');
