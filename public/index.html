@@ -251,7 +251,137 @@
         <div class="field-group">
           <div class="field">
             <label>Event Name</label>
-            <input type="text" id="newEvent" placeholder="e.g., player.kills">
+            <select id="newEvent">
+              <optgroup label="Map">
+                <option value="map.name">map.name</option>
+                <option value="map.matchid">map.matchid</option>
+                <option value="map.game_time">map.game_time</option>
+                <option value="map.clock_time">map.clock_time</option>
+                <option value="map.daytime">map.daytime</option>
+                <option value="map.nightstalker_night">map.nightstalker_night</option>
+                <option value="map.radiant_score">map.radiant_score</option>
+                <option value="map.dire_score">map.dire_score</option>
+                <option value="map.game_state">map.game_state</option>
+                <option value="map.paused">map.paused</option>
+                <option value="map.win_team">map.win_team</option>
+                <option value="map.customgamename">map.customgamename</option>
+                <option value="map.ward_purchase_cooldown">map.ward_purchase_cooldown</option>
+              </optgroup>
+              <optgroup label="Player">
+                <option value="player.steamid">player.steamid</option>
+                <option value="player.accountid">player.accountid</option>
+                <option value="player.name">player.name</option>
+                <option value="player.activity">player.activity</option>
+                <option value="player.kills">player.kills</option>
+                <option value="player.deaths">player.deaths</option>
+                <option value="player.assists">player.assists</option>
+                <option value="player.last_hits">player.last_hits</option>
+                <option value="player.denies">player.denies</option>
+                <option value="player.kill_streak">player.kill_streak</option>
+                <option value="player.commands_issued">player.commands_issued</option>
+                <option value="player.team_name">player.team_name</option>
+                <option value="player.player_slot">player.player_slot</option>
+                <option value="player.team_slot">player.team_slot</option>
+                <option value="player.gold">player.gold</option>
+                <option value="player.gold_reliable">player.gold_reliable</option>
+                <option value="player.gold_unreliable">player.gold_unreliable</option>
+                <option value="player.gold_from_hero_kills">player.gold_from_hero_kills</option>
+                <option value="player.gold_from_creep_kills">player.gold_from_creep_kills</option>
+                <option value="player.gold_from_income">player.gold_from_income</option>
+                <option value="player.gold_from_shared">player.gold_from_shared</option>
+                <option value="player.gpm">player.gpm</option>
+                <option value="player.xpm">player.xpm</option>
+              </optgroup>
+              <optgroup label="Hero">
+                <option value="hero.facet">hero.facet</option>
+                <option value="hero.xpos">hero.xpos</option>
+                <option value="hero.ypos">hero.ypos</option>
+                <option value="hero.id">hero.id</option>
+                <option value="hero.name">hero.name</option>
+                <option value="hero.level">hero.level</option>
+                <option value="hero.xp">hero.xp</option>
+                <option value="hero.alive">hero.alive</option>
+                <option value="hero.respawn_seconds">hero.respawn_seconds</option>
+                <option value="hero.buyback_cost">hero.buyback_cost</option>
+                <option value="hero.buyback_cooldown">hero.buyback_cooldown</option>
+                <option value="hero.health">hero.health</option>
+                <option value="hero.max_health">hero.max_health</option>
+                <option value="hero.health_percent">hero.health_percent</option>
+                <option value="hero.mana">hero.mana</option>
+                <option value="hero.max_mana">hero.max_mana</option>
+                <option value="hero.mana_percent">hero.mana_percent</option>
+                <option value="hero.silenced">hero.silenced</option>
+                <option value="hero.stunned">hero.stunned</option>
+                <option value="hero.disarmed">hero.disarmed</option>
+                <option value="hero.magicimmune">hero.magicimmune</option>
+                <option value="hero.hexed">hero.hexed</option>
+                <option value="hero.muted">hero.muted</option>
+                <option value="hero.break">hero.break</option>
+                <option value="hero.aghanims_scepter">hero.aghanims_scepter</option>
+                <option value="hero.aghanims_shard">hero.aghanims_shard</option>
+                <option value="hero.smoked">hero.smoked</option>
+                <option value="hero.has_debuff">hero.has_debuff</option>
+                <option value="hero.talent_1">hero.talent_1</option>
+                <option value="hero.talent_2">hero.talent_2</option>
+                <option value="hero.talent_3">hero.talent_3</option>
+                <option value="hero.talent_4">hero.talent_4</option>
+                <option value="hero.talent_5">hero.talent_5</option>
+                <option value="hero.talent_6">hero.talent_6</option>
+                <option value="hero.talent_7">hero.talent_7</option>
+                <option value="hero.talent_8">hero.talent_8</option>
+                <option value="hero.attributes_level">hero.attributes_level</option>
+              </optgroup>
+              <optgroup label="Abilities">
+                <option value="abilities.ability0.name">abilities.ability0.name</option>
+                <option value="abilities.ability0.level">abilities.ability0.level</option>
+                <option value="abilities.ability0.can_cast">abilities.ability0.can_cast</option>
+                <option value="abilities.ability0.passive">abilities.ability0.passive</option>
+                <option value="abilities.ability0.ability_active">abilities.ability0.ability_active</option>
+                <option value="abilities.ability0.cooldown">abilities.ability0.cooldown</option>
+                <option value="abilities.ability0.max_cooldown">abilities.ability0.max_cooldown</option>
+                <option value="abilities.ability0.ultimate">abilities.ability0.ultimate</option>
+                <option value="abilities.ability1.name">abilities.ability1.name</option>
+                <option value="abilities.ability1.level">abilities.ability1.level</option>
+                <option value="abilities.ability1.can_cast">abilities.ability1.can_cast</option>
+                <option value="abilities.ability1.passive">abilities.ability1.passive</option>
+                <option value="abilities.ability1.ability_active">abilities.ability1.ability_active</option>
+                <option value="abilities.ability1.cooldown">abilities.ability1.cooldown</option>
+                <option value="abilities.ability1.max_cooldown">abilities.ability1.max_cooldown</option>
+                <option value="abilities.ability1.ultimate">abilities.ability1.ultimate</option>
+                <option value="abilities.ability2.name">abilities.ability2.name</option>
+                <option value="abilities.ability2.level">abilities.ability2.level</option>
+                <option value="abilities.ability2.can_cast">abilities.ability2.can_cast</option>
+                <option value="abilities.ability2.passive">abilities.ability2.passive</option>
+                <option value="abilities.ability2.ability_active">abilities.ability2.ability_active</option>
+                <option value="abilities.ability2.cooldown">abilities.ability2.cooldown</option>
+                <option value="abilities.ability2.max_cooldown">abilities.ability2.max_cooldown</option>
+                <option value="abilities.ability2.ultimate">abilities.ability2.ultimate</option>
+                <option value="abilities.ability3.name">abilities.ability3.name</option>
+                <option value="abilities.ability3.level">abilities.ability3.level</option>
+                <option value="abilities.ability3.can_cast">abilities.ability3.can_cast</option>
+                <option value="abilities.ability3.passive">abilities.ability3.passive</option>
+                <option value="abilities.ability3.ability_active">abilities.ability3.ability_active</option>
+                <option value="abilities.ability3.cooldown">abilities.ability3.cooldown</option>
+                <option value="abilities.ability3.max_cooldown">abilities.ability3.max_cooldown</option>
+                <option value="abilities.ability3.ultimate">abilities.ability3.ultimate</option>
+              </optgroup>
+              <optgroup label="Items">
+                <option value="items.slot0.name">items.slot0.name</option>
+                <option value="items.slot1.name">items.slot1.name</option>
+                <option value="items.slot2.name">items.slot2.name</option>
+                <option value="items.slot3.name">items.slot3.name</option>
+                <option value="items.slot4.name">items.slot4.name</option>
+                <option value="items.slot5.name">items.slot5.name</option>
+                <option value="items.slot6.name">items.slot6.name</option>
+                <option value="items.slot7.name">items.slot7.name</option>
+                <option value="items.slot8.name">items.slot8.name</option>
+                <option value="items.teleport0.name">items.teleport0.name</option>
+                <option value="items.neutral0.name">items.neutral0.name</option>
+              </optgroup>
+              <optgroup label="Buildings">
+                <option value="buildings.dire">buildings.dire</option>
+              </optgroup>
+            </select>
           </div>
           <div class="field">
             <label>Audio Clip URL</label>
@@ -319,7 +449,137 @@
           <div class="mapping-row">
             <div class="field">
               <label>Event Name</label>
-              <input type="text" value="${m.event}" onchange="update(${i}, 'event', this.value)" placeholder="event">
+              <select onchange="update(${i}, 'event', this.value)">
+                <optgroup label="Map">
+                  <option value="map.name" ${m.event === 'map.name' ? 'selected' : ''}>map.name</option>
+                  <option value="map.matchid" ${m.event === 'map.matchid' ? 'selected' : ''}>map.matchid</option>
+                  <option value="map.game_time" ${m.event === 'map.game_time' ? 'selected' : ''}>map.game_time</option>
+                  <option value="map.clock_time" ${m.event === 'map.clock_time' ? 'selected' : ''}>map.clock_time</option>
+                  <option value="map.daytime" ${m.event === 'map.daytime' ? 'selected' : ''}>map.daytime</option>
+                  <option value="map.nightstalker_night" ${m.event === 'map.nightstalker_night' ? 'selected' : ''}>map.nightstalker_night</option>
+                  <option value="map.radiant_score" ${m.event === 'map.radiant_score' ? 'selected' : ''}>map.radiant_score</option>
+                  <option value="map.dire_score" ${m.event === 'map.dire_score' ? 'selected' : ''}>map.dire_score</option>
+                  <option value="map.game_state" ${m.event === 'map.game_state' ? 'selected' : ''}>map.game_state</option>
+                  <option value="map.paused" ${m.event === 'map.paused' ? 'selected' : ''}>map.paused</option>
+                  <option value="map.win_team" ${m.event === 'map.win_team' ? 'selected' : ''}>map.win_team</option>
+                  <option value="map.customgamename" ${m.event === 'map.customgamename' ? 'selected' : ''}>map.customgamename</option>
+                  <option value="map.ward_purchase_cooldown" ${m.event === 'map.ward_purchase_cooldown' ? 'selected' : ''}>map.ward_purchase_cooldown</option>
+                </optgroup>
+                <optgroup label="Player">
+                  <option value="player.steamid" ${m.event === 'player.steamid' ? 'selected' : ''}>player.steamid</option>
+                  <option value="player.accountid" ${m.event === 'player.accountid' ? 'selected' : ''}>player.accountid</option>
+                  <option value="player.name" ${m.event === 'player.name' ? 'selected' : ''}>player.name</option>
+                  <option value="player.activity" ${m.event === 'player.activity' ? 'selected' : ''}>player.activity</option>
+                  <option value="player.kills" ${m.event === 'player.kills' ? 'selected' : ''}>player.kills</option>
+                  <option value="player.deaths" ${m.event === 'player.deaths' ? 'selected' : ''}>player.deaths</option>
+                  <option value="player.assists" ${m.event === 'player.assists' ? 'selected' : ''}>player.assists</option>
+                  <option value="player.last_hits" ${m.event === 'player.last_hits' ? 'selected' : ''}>player.last_hits</option>
+                  <option value="player.denies" ${m.event === 'player.denies' ? 'selected' : ''}>player.denies</option>
+                  <option value="player.kill_streak" ${m.event === 'player.kill_streak' ? 'selected' : ''}>player.kill_streak</option>
+                  <option value="player.commands_issued" ${m.event === 'player.commands_issued' ? 'selected' : ''}>player.commands_issued</option>
+                  <option value="player.team_name" ${m.event === 'player.team_name' ? 'selected' : ''}>player.team_name</option>
+                  <option value="player.player_slot" ${m.event === 'player.player_slot' ? 'selected' : ''}>player.player_slot</option>
+                  <option value="player.team_slot" ${m.event === 'player.team_slot' ? 'selected' : ''}>player.team_slot</option>
+                  <option value="player.gold" ${m.event === 'player.gold' ? 'selected' : ''}>player.gold</option>
+                  <option value="player.gold_reliable" ${m.event === 'player.gold_reliable' ? 'selected' : ''}>player.gold_reliable</option>
+                  <option value="player.gold_unreliable" ${m.event === 'player.gold_unreliable' ? 'selected' : ''}>player.gold_unreliable</option>
+                  <option value="player.gold_from_hero_kills" ${m.event === 'player.gold_from_hero_kills' ? 'selected' : ''}>player.gold_from_hero_kills</option>
+                  <option value="player.gold_from_creep_kills" ${m.event === 'player.gold_from_creep_kills' ? 'selected' : ''}>player.gold_from_creep_kills</option>
+                  <option value="player.gold_from_income" ${m.event === 'player.gold_from_income' ? 'selected' : ''}>player.gold_from_income</option>
+                  <option value="player.gold_from_shared" ${m.event === 'player.gold_from_shared' ? 'selected' : ''}>player.gold_from_shared</option>
+                  <option value="player.gpm" ${m.event === 'player.gpm' ? 'selected' : ''}>player.gpm</option>
+                  <option value="player.xpm" ${m.event === 'player.xpm' ? 'selected' : ''}>player.xpm</option>
+                </optgroup>
+                <optgroup label="Hero">
+                  <option value="hero.facet" ${m.event === 'hero.facet' ? 'selected' : ''}>hero.facet</option>
+                  <option value="hero.xpos" ${m.event === 'hero.xpos' ? 'selected' : ''}>hero.xpos</option>
+                  <option value="hero.ypos" ${m.event === 'hero.ypos' ? 'selected' : ''}>hero.ypos</option>
+                  <option value="hero.id" ${m.event === 'hero.id' ? 'selected' : ''}>hero.id</option>
+                  <option value="hero.name" ${m.event === 'hero.name' ? 'selected' : ''}>hero.name</option>
+                  <option value="hero.level" ${m.event === 'hero.level' ? 'selected' : ''}>hero.level</option>
+                  <option value="hero.xp" ${m.event === 'hero.xp' ? 'selected' : ''}>hero.xp</option>
+                  <option value="hero.alive" ${m.event === 'hero.alive' ? 'selected' : ''}>hero.alive</option>
+                  <option value="hero.respawn_seconds" ${m.event === 'hero.respawn_seconds' ? 'selected' : ''}>hero.respawn_seconds</option>
+                  <option value="hero.buyback_cost" ${m.event === 'hero.buyback_cost' ? 'selected' : ''}>hero.buyback_cost</option>
+                  <option value="hero.buyback_cooldown" ${m.event === 'hero.buyback_cooldown' ? 'selected' : ''}>hero.buyback_cooldown</option>
+                  <option value="hero.health" ${m.event === 'hero.health' ? 'selected' : ''}>hero.health</option>
+                  <option value="hero.max_health" ${m.event === 'hero.max_health' ? 'selected' : ''}>hero.max_health</option>
+                  <option value="hero.health_percent" ${m.event === 'hero.health_percent' ? 'selected' : ''}>hero.health_percent</option>
+                  <option value="hero.mana" ${m.event === 'hero.mana' ? 'selected' : ''}>hero.mana</option>
+                  <option value="hero.max_mana" ${m.event === 'hero.max_mana' ? 'selected' : ''}>hero.max_mana</option>
+                  <option value="hero.mana_percent" ${m.event === 'hero.mana_percent' ? 'selected' : ''}>hero.mana_percent</option>
+                  <option value="hero.silenced" ${m.event === 'hero.silenced' ? 'selected' : ''}>hero.silenced</option>
+                  <option value="hero.stunned" ${m.event === 'hero.stunned' ? 'selected' : ''}>hero.stunned</option>
+                  <option value="hero.disarmed" ${m.event === 'hero.disarmed' ? 'selected' : ''}>hero.disarmed</option>
+                  <option value="hero.magicimmune" ${m.event === 'hero.magicimmune' ? 'selected' : ''}>hero.magicimmune</option>
+                  <option value="hero.hexed" ${m.event === 'hero.hexed' ? 'selected' : ''}>hero.hexed</option>
+                  <option value="hero.muted" ${m.event === 'hero.muted' ? 'selected' : ''}>hero.muted</option>
+                  <option value="hero.break" ${m.event === 'hero.break' ? 'selected' : ''}>hero.break</option>
+                  <option value="hero.aghanims_scepter" ${m.event === 'hero.aghanims_scepter' ? 'selected' : ''}>hero.aghanims_scepter</option>
+                  <option value="hero.aghanims_shard" ${m.event === 'hero.aghanims_shard' ? 'selected' : ''}>hero.aghanims_shard</option>
+                  <option value="hero.smoked" ${m.event === 'hero.smoked' ? 'selected' : ''}>hero.smoked</option>
+                  <option value="hero.has_debuff" ${m.event === 'hero.has_debuff' ? 'selected' : ''}>hero.has_debuff</option>
+                  <option value="hero.talent_1" ${m.event === 'hero.talent_1' ? 'selected' : ''}>hero.talent_1</option>
+                  <option value="hero.talent_2" ${m.event === 'hero.talent_2' ? 'selected' : ''}>hero.talent_2</option>
+                  <option value="hero.talent_3" ${m.event === 'hero.talent_3' ? 'selected' : ''}>hero.talent_3</option>
+                  <option value="hero.talent_4" ${m.event === 'hero.talent_4' ? 'selected' : ''}>hero.talent_4</option>
+                  <option value="hero.talent_5" ${m.event === 'hero.talent_5' ? 'selected' : ''}>hero.talent_5</option>
+                  <option value="hero.talent_6" ${m.event === 'hero.talent_6' ? 'selected' : ''}>hero.talent_6</option>
+                  <option value="hero.talent_7" ${m.event === 'hero.talent_7' ? 'selected' : ''}>hero.talent_7</option>
+                  <option value="hero.talent_8" ${m.event === 'hero.talent_8' ? 'selected' : ''}>hero.talent_8</option>
+                  <option value="hero.attributes_level" ${m.event === 'hero.attributes_level' ? 'selected' : ''}>hero.attributes_level</option>
+                </optgroup>
+                <optgroup label="Abilities">
+                  <option value="abilities.ability0.name" ${m.event === 'abilities.ability0.name' ? 'selected' : ''}>abilities.ability0.name</option>
+                  <option value="abilities.ability0.level" ${m.event === 'abilities.ability0.level' ? 'selected' : ''}>abilities.ability0.level</option>
+                  <option value="abilities.ability0.can_cast" ${m.event === 'abilities.ability0.can_cast' ? 'selected' : ''}>abilities.ability0.can_cast</option>
+                  <option value="abilities.ability0.passive" ${m.event === 'abilities.ability0.passive' ? 'selected' : ''}>abilities.ability0.passive</option>
+                  <option value="abilities.ability0.ability_active" ${m.event === 'abilities.ability0.ability_active' ? 'selected' : ''}>abilities.ability0.ability_active</option>
+                  <option value="abilities.ability0.cooldown" ${m.event === 'abilities.ability0.cooldown' ? 'selected' : ''}>abilities.ability0.cooldown</option>
+                  <option value="abilities.ability0.max_cooldown" ${m.event === 'abilities.ability0.max_cooldown' ? 'selected' : ''}>abilities.ability0.max_cooldown</option>
+                  <option value="abilities.ability0.ultimate" ${m.event === 'abilities.ability0.ultimate' ? 'selected' : ''}>abilities.ability0.ultimate</option>
+                  <option value="abilities.ability1.name" ${m.event === 'abilities.ability1.name' ? 'selected' : ''}>abilities.ability1.name</option>
+                  <option value="abilities.ability1.level" ${m.event === 'abilities.ability1.level' ? 'selected' : ''}>abilities.ability1.level</option>
+                  <option value="abilities.ability1.can_cast" ${m.event === 'abilities.ability1.can_cast' ? 'selected' : ''}>abilities.ability1.can_cast</option>
+                  <option value="abilities.ability1.passive" ${m.event === 'abilities.ability1.passive' ? 'selected' : ''}>abilities.ability1.passive</option>
+                  <option value="abilities.ability1.ability_active" ${m.event === 'abilities.ability1.ability_active' ? 'selected' : ''}>abilities.ability1.ability_active</option>
+                  <option value="abilities.ability1.cooldown" ${m.event === 'abilities.ability1.cooldown' ? 'selected' : ''}>abilities.ability1.cooldown</option>
+                  <option value="abilities.ability1.max_cooldown" ${m.event === 'abilities.ability1.max_cooldown' ? 'selected' : ''}>abilities.ability1.max_cooldown</option>
+                  <option value="abilities.ability1.ultimate" ${m.event === 'abilities.ability1.ultimate' ? 'selected' : ''}>abilities.ability1.ultimate</option>
+                  <option value="abilities.ability2.name" ${m.event === 'abilities.ability2.name' ? 'selected' : ''}>abilities.ability2.name</option>
+                  <option value="abilities.ability2.level" ${m.event === 'abilities.ability2.level' ? 'selected' : ''}>abilities.ability2.level</option>
+                  <option value="abilities.ability2.can_cast" ${m.event === 'abilities.ability2.can_cast' ? 'selected' : ''}>abilities.ability2.can_cast</option>
+                  <option value="abilities.ability2.passive" ${m.event === 'abilities.ability2.passive' ? 'selected' : ''}>abilities.ability2.passive</option>
+                  <option value="abilities.ability2.ability_active" ${m.event === 'abilities.ability2.ability_active' ? 'selected' : ''}>abilities.ability2.ability_active</option>
+                  <option value="abilities.ability2.cooldown" ${m.event === 'abilities.ability2.cooldown' ? 'selected' : ''}>abilities.ability2.cooldown</option>
+                  <option value="abilities.ability2.max_cooldown" ${m.event === 'abilities.ability2.max_cooldown' ? 'selected' : ''}>abilities.ability2.max_cooldown</option>
+                  <option value="abilities.ability2.ultimate" ${m.event === 'abilities.ability2.ultimate' ? 'selected' : ''}>abilities.ability2.ultimate</option>
+                  <option value="abilities.ability3.name" ${m.event === 'abilities.ability3.name' ? 'selected' : ''}>abilities.ability3.name</option>
+                  <option value="abilities.ability3.level" ${m.event === 'abilities.ability3.level' ? 'selected' : ''}>abilities.ability3.level</option>
+                  <option value="abilities.ability3.can_cast" ${m.event === 'abilities.ability3.can_cast' ? 'selected' : ''}>abilities.ability3.can_cast</option>
+                  <option value="abilities.ability3.passive" ${m.event === 'abilities.ability3.passive' ? 'selected' : ''}>abilities.ability3.passive</option>
+                  <option value="abilities.ability3.ability_active" ${m.event === 'abilities.ability3.ability_active' ? 'selected' : ''}>abilities.ability3.ability_active</option>
+                  <option value="abilities.ability3.cooldown" ${m.event === 'abilities.ability3.cooldown' ? 'selected' : ''}>abilities.ability3.cooldown</option>
+                  <option value="abilities.ability3.max_cooldown" ${m.event === 'abilities.ability3.max_cooldown' ? 'selected' : ''}>abilities.ability3.max_cooldown</option>
+                  <option value="abilities.ability3.ultimate" ${m.event === 'abilities.ability3.ultimate' ? 'selected' : ''}>abilities.ability3.ultimate</option>
+                </optgroup>
+                <optgroup label="Items">
+                  <option value="items.slot0.name" ${m.event === 'items.slot0.name' ? 'selected' : ''}>items.slot0.name</option>
+                  <option value="items.slot1.name" ${m.event === 'items.slot1.name' ? 'selected' : ''}>items.slot1.name</option>
+                  <option value="items.slot2.name" ${m.event === 'items.slot2.name' ? 'selected' : ''}>items.slot2.name</option>
+                  <option value="items.slot3.name" ${m.event === 'items.slot3.name' ? 'selected' : ''}>items.slot3.name</option>
+                  <option value="items.slot4.name" ${m.event === 'items.slot4.name' ? 'selected' : ''}>items.slot4.name</option>
+                  <option value="items.slot5.name" ${m.event === 'items.slot5.name' ? 'selected' : ''}>items.slot5.name</option>
+                  <option value="items.slot6.name" ${m.event === 'items.slot6.name' ? 'selected' : ''}>items.slot6.name</option>
+                  <option value="items.slot7.name" ${m.event === 'items.slot7.name' ? 'selected' : ''}>items.slot7.name</option>
+                  <option value="items.slot8.name" ${m.event === 'items.slot8.name' ? 'selected' : ''}>items.slot8.name</option>
+                  <option value="items.teleport0.name" ${m.event === 'items.teleport0.name' ? 'selected' : ''}>items.teleport0.name</option>
+                  <option value="items.neutral0.name" ${m.event === 'items.neutral0.name' ? 'selected' : ''}>items.neutral0.name</option>
+                </optgroup>
+                <optgroup label="Buildings">
+                  <option value="buildings.dire" ${m.event === 'buildings.dire' ? 'selected' : ''}>buildings.dire</option>
+                </optgroup>
+              </select>
             </div>
             <div class="field">
               <label>Audio Clip URL</label>
