@@ -214,7 +214,7 @@ let suppressReport = false;
 watch(configFile, async (event) => {
   if (event === "change") {
     mapping = await config.json();
-    console.log({mapping})
+    console.log("reload config file!")
   }
 });
 
