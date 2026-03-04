@@ -194,6 +194,12 @@
     .btn-icon.danger { background: rgba(248, 81, 73, 0.15); color: var(--danger); border-color: transparent; }
     .btn-icon.danger:hover:not(:disabled) { background: var(--danger); color: #fff; border-color: var(--danger); }
     
+    .btn-play.playing {
+      color: var(--success);
+      border-color: var(--success);
+      background: rgba(63, 185, 80, 0.15);
+    }
+    
     .order-btns {
       display: flex;
       flex-direction: column;
@@ -385,7 +391,10 @@
           </div>
           <div class="field">
             <label>Audio Clip URL</label>
-            <input type="text" id="newSound" placeholder="sound URL">
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="newSound" placeholder="sound URL" style="flex: 1;">
+              <button type="button" class="btn-icon btn-play" onclick="playNewSound()" title="Play">▶</button>
+            </div>
           </div>
           <div class="field small">
             <label>Condition</label>
@@ -416,6 +425,50 @@
   </div>
 
   <script>
+    let currentAudio = null;
+    let currentBtn = null;
+
+    function playSound(url, btn) {
+      if (!url) return;
+      
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+        if (currentBtn) {
+          currentBtn.classList.remove('playing');
+          currentBtn.textContent = '▶';
+        }
+      }
+      
+      if (btn && btn === currentBtn) {
+        currentBtn = null;
+        return;
+      }
+      
+      currentAudio = new Audio(url);
+      currentAudio.play().catch(() => {});
+      currentBtn = btn;
+      if (btn) {
+        btn.classList.add('playing');
+        btn.textContent = '⏸';
+      }
+      
+      currentAudio.onended = () => {
+        if (currentBtn) {
+          currentBtn.classList.remove('playing');
+          currentBtn.textContent = '▶';
+        }
+        currentAudio = null;
+        currentBtn = null;
+      };
+    }
+
+    function playNewSound() {
+      const url = document.getElementById('newSound').value.trim();
+      const btn = document.querySelector('#newEvent').closest('.field-group').querySelector('.btn-play');
+      playSound(url, btn);
+    }
+
     let mappings = [];
     let originalMappings = [];
 
@@ -583,7 +636,10 @@
             </div>
             <div class="field">
               <label>Audio Clip URL</label>
-              <input type="text" value="${m.sound}" onchange="update(${i}, 'sound', this.value)" placeholder="sound URL">
+              <div style="display: flex; gap: 8px;">
+                <input type="text" value="${m.sound}" onchange="update(${i}, 'sound', this.value)" placeholder="sound URL" style="flex: 1;">
+                <button type="button" class="btn-icon btn-play" onclick="playSound('${m.sound}', this)" title="Play">▶</button>
+              </div>
             </div>
             <div class="field small">
               <label>Condition</label>
