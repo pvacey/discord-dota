@@ -9,7 +9,6 @@
         "@snazzah/davey": "^0.1.9",
         "discord.js": "^14.25.1",
         "hono": "^4.11.4",
-        "varlock": "^0.4.2",
       },
       "devDependencies": {
         "@types/bun": "latest",
@@ -115,8 +114,6 @@
     "undici": ["undici@6.21.3", "", {}, "sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw=="],
 
     "undici-types": ["undici-types@7.16.0", "", {}, "sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw=="],
-
-    "varlock": ["varlock@0.4.2", "", { "bin": { "varlock": "bin/cli.js" } }, "sha512-7/JzuOWcAivPbIcUQVbBPDnh2/fGKEGpYNx3aiDRcqM5sG3T4ChO2CemaCku2vzbDMYPLh0mQw08u0w4QFb5AA=="],
 
     "ws": ["ws@8.19.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg=="],
 

@@ -4,7 +4,6 @@ import { createAudioPlayer, createAudioResource, getVoiceConnections, joinVoiceC
 import { watch } from 'fs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { ENV } from "varlock/env";
 
 class VoiceConnection {
   constructor(guildId, channelId, client) {
@@ -134,7 +133,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   }
 });
 
-client.login(ENV.DISCORD_TOKEN);
+client.login(process.env.DISCORD_TOKEN);
 
 ///////////////////////////////////////////////////////////
 // DOTA2 GSI Server                                      //

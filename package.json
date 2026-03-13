@@ -8,14 +8,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun --hot run index.js"
+    "dev": "node --env-file=.env index.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.0",
     "@snazzah/davey": "^0.1.9",
     "discord.js": "^14.25.1",
-    "hono": "^4.11.4",
-    "varlock": "^0.4.2"
+    "hono": "^4.11.4"
   },
   "private": true,
   "devDependencies": {
