@@ -7,7 +7,7 @@ import path from 'node:path';
 import pino from 'pino';
 
 const logger = pino({
-  level: 'info',
+  level: 'debug',
   timestamp: () => `,"time":"${new Date().toISOString()}"`,
 })
 
