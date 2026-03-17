@@ -167,13 +167,16 @@ const gameSummary = async (matchID) => {
     let settings = await f.json()
     const channel = await client.channels.fetch(settings.channel);
     channel.send(`https://www.opendota.com/matches/${matchID}`);
-    console.log({channel})
     logger.info(`sent match details to ${channel.guild.name} -> ${channel.name}`);
     
-    const response = await fetch(`http://api.opendota.com/api/request/${matchID}`, {
-      method: "POST"
-    });
-    logger.info(`opendota parse request for matchID=${matchID} http_status=${response.status}`)
+    // this doesn't work without a sleep?
+    setTimeout(async () => {
+      suppressReport = false
+      const response = await fetch(`http://api.opendota.com/api/request/${matchID}`, {
+        method: "POST"
+      });
+      logger.info(`opendota parse request for matchID=${matchID} http_status=${response.status}`)
+    }, 5000);
   }
 }
 
