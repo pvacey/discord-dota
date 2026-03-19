@@ -138,9 +138,68 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
 client.login(process.env.DISCORD_TOKEN);
 
 ///////////////////////////////////////////////////////////
-// DOTA2 GSI Server                                      //
+// clickhouse client
 ///////////////////////////////////////////////////////////
 
+import { createClient } from '@clickhouse/client';
+
+// 1. Initialize Client
+const clickhouseClient = createClient({
+  url: process.env.CLICKHOUSE_HOST || 'http://localhost:8123',
+  username: 'default',
+  password: '',
+  database: 'default',
+});
+
+// 2. Batch Configuration
+const BATCH_SIZE_THRESHOLD = 5000;
+const FLUSH_INTERVAL_MS = 10000; // 10 seconds
+
+let eventBuffer = [];
+
+// 3. The Core Batching Function
+async function flushToClickHouse() {
+  if (eventBuffer.length === 0) return;
+
+  const dataToInsert = [...eventBuffer];
+  eventBuffer = []; // Clear buffer immediately to prevent race conditions
+
+  try {
+    await clickhouseClient.insert({
+      table: 'dota_events',
+      values: dataToInsert,
+      format: 'JSONEachRow',
+    });
+    logger.info(`Successfully flushed ${dataToInsert.length} rows to ClickHouse.`);
+  } catch (err) {
+    logger.error('ClickHouse Insert Error:', err);
+  }
+}
+
+// 4. Set the Timer
+setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
+
+/**
+ * Public function to log GSI events
+ */
+export async function logEvent(accountID, matchID, timestamp, gameTime, key, value) {
+  eventBuffer.push({
+    account_id: accountID,
+    match_id: matchID,
+    timestamp: timestamp,
+    game_time: gameTime,
+    event_key: key,
+    event_value: value,
+  });
+
+  if (eventBuffer.length >= BATCH_SIZE_THRESHOLD) {
+    await flushToClickHouse();
+  }
+}
+
+///////////////////////////////////////////////////////////
+// DOTA2 GSI Server                                      //
+///////////////////////////////////////////////////////////
 
 const recursiveDiff = (prefix, changed, body, context) => {
   for (const key of Object.keys(changed)) {
@@ -181,7 +240,9 @@ const gameSummary = async (matchID) => {
 }
 
 const handleGameEvent = async (eventName, value, context) => {
-  logger.debug(`handling event ${eventName}=${value} playerID=${context.playerID}`)
+  if (!(eventName === "map.game_time" || eventName === "map.clock_time" ) && typeof value === 'number' ) {
+    logEvent(context.accountID, context.matchID, context.timestamp, context.gameTime, eventName, value)
+  }
 
   if (eventName === "map.game_state" && value === "DOTA_GAMERULES_STATE_POST_GAME" && !suppressReport) {
     gameSummary(context.matchID);
@@ -211,7 +272,7 @@ const handleGameEvent = async (eventName, value, context) => {
         break;
     }
     if (play) {
-      logger.debug({obj})
+      logger.debug(`${{context}} triggered ${{obj}}`)
       for (const conn of Object.values(connections)) {
         conn.playSound(obj.sound);
       }
@@ -257,8 +318,10 @@ app.post('/', async (c) => {
   const payload = await c.req.json();
   if (payload.previously) {
     const ctx = {
-      playerID: payload.player.steamid,
-      matchID: payload.map.matchid
+      accountID: payload.player.accountid,
+      matchID: payload.map.matchid,
+      gameTime: payload.map.game_time,
+      timestamp: payload.provider.timestamp * 1000
     }
     recursiveDiff("",payload.previously, payload, ctx)
   }
