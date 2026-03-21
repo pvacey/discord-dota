@@ -218,6 +218,7 @@ const BATCH_SIZE_THRESHOLD = 5000;
 const FLUSH_INTERVAL_MS = 10_000; // 10 seconds
 
 let eventBuffer: ClickHouseRow[] = [];
+let rawRequestBuffer: { timestamp: number; payload: unknown }[] = [];
 
 async function flushToClickHouse(): Promise<void> {
   if (eventBuffer.length === 0) {
@@ -239,7 +240,29 @@ async function flushToClickHouse(): Promise<void> {
   }
 }
 
+async function flushRawRequests(): Promise<void> {
+  if (rawRequestBuffer.length === 0) {
+    return;
+  }
+
+  const dataToInsert = [...rawRequestBuffer];
+  rawRequestBuffer = [];
+
+  try {
+    await clickhouseClient.insert({
+      table: 'raw_requests',
+      values: dataToInsert,
+      format: 'JSONEachRow',
+    });
+    logger.info(`Flushed ${dataToInsert.length} raw requests to ClickHouse.`);
+  } catch (error) {
+    console.log(error)
+    logger.error({ error }, 'ClickHouse raw_requests insert error');
+  }
+}
+
 setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
+setInterval(flushRawRequests, FLUSH_INTERVAL_MS);
 
 export async function logEvent(
   accountID: number,
@@ -261,6 +284,37 @@ export async function logEvent(
   if (eventBuffer.length >= BATCH_SIZE_THRESHOLD) {
     await flushToClickHouse();
   }
+}
+
+export async function logRawRequest(payload: unknown): Promise<void> {
+  // filter out the ticks that are just basic events, return early
+  const requestKeys = new Set(getDeepKeys(payload.previously))
+  const ignoreSet = new Set([
+    "map", "map.game_time", "map.clock_time", "player", "player.gold", "player.gold_reliable",
+    "player.gold_from_income", "player.gpm", "player.xpm", "hero", "hero.health", "hero.mana", "hero.mana_percent",
+    "items", "items.teleport0", "items.teleport0.cooldown"
+  ])
+  if (requestKeys.difference(ignoreSet).size === 0) return
+
+
+  rawRequestBuffer.push({ timestamp: Date.now(), payload });
+
+  if (rawRequestBuffer.length >= BATCH_SIZE_THRESHOLD) {
+    await flushRawRequests();
+  }
+}
+
+function getDeepKeys(obj: any, prefix = ''): string[] {
+  return Object.keys(obj).reduce((res: string[], el) => {
+    const name = prefix ? `${prefix}.${el}` : el;
+    if (typeof obj[el] === 'object' && obj[el] !== null && !Array.isArray(obj[el])) {
+      res.push(name); // Add the parent key
+      res.push(...getDeepKeys(obj[el], name)); // Add children
+    } else {
+      res.push(name);
+    }
+    return res;
+  }, []);
 }
 
 ///////////////////////////////////////////////////////////
@@ -417,6 +471,9 @@ app.post('/', async (c) => {
       timestamp: payload.provider.timestamp * 1000,
     };
     recursiveDiff('', payload.previously, payload, ctx);
+    
+    // if it has interesting events, store the raw request
+    await logRawRequest(payload);
   }
   return c.text('OK', 200);
 });
