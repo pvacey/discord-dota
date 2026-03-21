@@ -290,7 +290,7 @@ export async function logRawRequest(payload: unknown): Promise<void> {
   // filter out the ticks that are just basic events, return early
   const requestKeys = new Set(getDeepKeys(payload.previously))
   const ignoreSet = new Set([
-    "map", "map.game_time", "map.clock_time", "player", "player.gold", "player.gold_reliable",
+    "map", "map.game_time", "map.clock_time", "player", "player.gold", "player.gold_reliable", "player.gold_unreliable",
     "player.gold_from_income", "player.gpm", "player.xpm", "hero", "hero.health", "hero.mana", "hero.mana_percent",
     "items", "items.teleport0", "items.teleport0.cooldown"
   ])
