@@ -22,4 +22,4 @@ COPY . .
 
 USER bun
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "index.js" ]
+ENTRYPOINT [ "bun", "run", "index.ts" ]

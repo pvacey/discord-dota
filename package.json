@@ -1,14 +1,20 @@
 {
   "name": "annoying-noises",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "license": "ISC",
   "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node --env-file=.env index.js"
+    "dev": "bun run --env-file=.env index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
   },
   "dependencies": {
     "@clickhouse/client": "^1.18.2",
@@ -18,11 +24,10 @@
     "hono": "^4.11.4",
     "pino": "^10.3.1"
   },
-  "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
+    "@types/bun": "latest",
+    "oxfmt": "^0.41.0",
+    "oxlint": "^1.56.0",
     "typescript": "^5"
   }
 }
