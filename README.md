@@ -138,6 +138,17 @@ ENGINE = ReplacingMergeTree()
 ORDER BY (account_id, match_id, timestamp, game_time, event_key, event_value);
 ```
 
+Raw GSI payloads are stored in the `raw_requests` table for debugging and advanced analysis:
+
+```sql
+CREATE TABLE raw_requests (
+    timestamp DateTime64(3),
+    payload JSON
+)
+ENGINE = MergeTree()
+ORDER BY timestamp;
+```
+
 ## Commands
 
 | Command | Description |
