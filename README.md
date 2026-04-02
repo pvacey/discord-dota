@@ -46,12 +46,26 @@ In order to register Discord slash commands create `config.json`:
 
 ### 3. Enable DOTA2 Game State Integration
 
-Create `gameintegration.cfg` in `Steam/steamapps/common/dota 2 beta/game/dota/cfg/`:
+Install the config automatically:
+
+Windows PowerShell:
+
+```powershell
+irm https://dota.ponder.guru/install/windows.ps1 | iex
+```
+
+Linux:
+
+```bash
+curl -fsSL https://dota.ponder.guru/install/linux.sh | sh
+```
+
+Manual fallback: create `gamestate_integration_ponder.cfg` in `Steam/steamapps/common/dota 2 beta/game/dota/cfg/gamestate_integration/`:
 
 ```
 "dota2-gsi Configuration"
 {
-    "uri"               "http://localhost:3000"
+    "uri"               "https://dota.ponder.guru"
     "timeout"           "5.0"
     "buffer"            "0.5"
     "throttle"          "0.5"
@@ -67,6 +81,10 @@ Create `gameintegration.cfg` in `Steam/steamapps/common/dota 2 beta/game/dota/cf
         "items"         "1"
         "draft"         "1"
         "wearables"     "1"
+    }
+    "auth"
+    {
+        "token"         "hello1234"
     }
 }
 ```
