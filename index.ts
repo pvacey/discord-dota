@@ -288,7 +288,9 @@ export async function logEvent(
 
 export async function logRawRequest(payload: unknown): Promise<void> {
   // filter out the ticks that are just basic events, return early
-  const requestKeys = new Set(getDeepKeys(payload.previously))
+  if (!payload || typeof payload !== 'object' || !('previously' in payload)) return
+
+  const requestKeys = new Set(getDeepKeys((payload as { previously: unknown }).previously))
   const ignoreSet = new Set([
     "map", "map.game_time", "map.clock_time", "player", "player.gold", "player.gold_reliable", "player.gold_unreliable",
     "player.gold_from_income", "player.gpm", "player.xpm", "hero", "hero.health", "hero.mana", "hero.mana_percent",
@@ -434,6 +436,160 @@ const config = Bun.file(configFile);
 let mapping: MappingEntry[] = await config.json();
 let suppressReport = false;
 
+const ponderCfg = `"dota2-gsi Configuration"
+{
+    "uri"               "https://dota.ponder.guru"
+    "timeout"           "5.0"
+    "buffer"            "0.5"
+    "throttle"          "0.5"
+    "heartbeat"         "30.0"
+    "data"
+    {
+        "buildings"     "1"
+        "provider"      "1"
+        "map"           "1"
+        "player"        "1"
+        "hero"          "1"
+        "abilities"     "1"
+        "items"         "1"
+        "draft"         "1"
+        "wearables"     "1"
+    }
+    "auth"
+    {
+        "token"         "hello1234"
+    }
+}
+`;
+
+const windowsInstallScript = String.raw`$ErrorActionPreference = "Stop"
+
+function Get-SteamRoots {
+    $roots = @()
+
+    if ($env:ProgramFiles) {
+        $roots += (Join-Path $env:ProgramFiles "Steam")
+    }
+
+    if (\${env:ProgramFiles(x86)}) {
+        $roots += (Join-Path \${env:ProgramFiles(x86)} "Steam")
+    }
+
+    $roots | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
+}
+
+function Get-SteamLibraries {
+    param([string[]]$SteamRoots)
+
+    $libraries = New-Object System.Collections.Generic.List[string]
+
+    foreach ($root in $SteamRoots) {
+        $libraries.Add($root)
+
+        $vdf = Join-Path $root "steamapps\\libraryfolders.vdf"
+        if (-not (Test-Path $vdf)) {
+            continue
+        }
+
+        $content = Get-Content $vdf -Raw
+        $matches = [regex]::Matches($content, '"path"\\s+"([^"]+)"')
+
+        foreach ($match in $matches) {
+            $libraryPath = $match.Groups[1].Value -replace '\\\\', '\\'
+            if (Test-Path $libraryPath) {
+                $libraries.Add($libraryPath)
+            }
+        }
+    }
+
+    $libraries | Select-Object -Unique
+}
+
+function Find-DotaPath {
+    param([string[]]$Libraries)
+
+    foreach ($library in $Libraries) {
+        $candidate = Join-Path $library "steamapps\\common\\dota 2 beta"
+        if (Test-Path $candidate) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+$steamRoots = Get-SteamRoots
+$libraries = Get-SteamLibraries -SteamRoots $steamRoots
+$dotaPath = Find-DotaPath -Libraries $libraries
+
+if (-not $dotaPath) {
+    Write-Error "Could not find 'dota 2 beta' in any Steam library."
+}
+
+$targetDir = Join-Path $dotaPath "game\\dota\\cfg\\gamestate_integration"
+New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
+
+$targetFile = Join-Path $targetDir "gamestate_integration_ponder.cfg"
+Invoke-WebRequest "https://dota.ponder.guru/install/ponder.cfg" -OutFile $targetFile
+
+Write-Host "Installed config to: $targetFile"
+`;
+
+const linuxInstallScript = String.raw`#!/bin/sh
+set -eu
+
+collect_libraries() {
+    for root in \
+        "$HOME/.steam/steam" \
+        "$HOME/.local/share/Steam" \
+        "$HOME/.var/app/com.valvesoftware.Steam/.steam/steam"
+    do
+        if [ -d "$root" ]; then
+            printf '%s\n' "$root"
+
+            vdf="$root/steamapps/libraryfolders.vdf"
+            if [ -f "$vdf" ]; then
+                sed -n 's/.*"path"[[:space:]]*"\(.*\)".*/\1/p' "$vdf" | sed 's#\\\\#/#g'
+            fi
+        fi
+    done
+}
+
+find_dota() {
+    collect_libraries | while IFS= read -r library; do
+        candidate="$library/steamapps/common/dota 2 beta"
+        if [ -d "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+DOTA_PATH="$(find_dota || true)"
+
+if [ -z "$DOTA_PATH" ]; then
+    printf '%s\n' "Could not find 'dota 2 beta' in any Steam library." >&2
+    exit 1
+fi
+
+TARGET_DIR="$DOTA_PATH/game/dota/cfg/gamestate_integration"
+mkdir -p "$TARGET_DIR"
+
+TARGET_FILE="$TARGET_DIR/gamestate_integration_ponder.cfg"
+
+if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "https://dota.ponder.guru/install/ponder.cfg" -o "$TARGET_FILE"
+elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$TARGET_FILE" "https://dota.ponder.guru/install/ponder.cfg"
+else
+    printf '%s\n' "Neither curl nor wget is installed." >&2
+    exit 1
+fi
+
+printf '%s\n' "Installed config to: $TARGET_FILE"
+`;
+
 watch(configFile, async (event) => {
   if (event === 'change') {
     mapping = await config.json();
@@ -449,6 +605,25 @@ app.get('/api/mappings', async (c) => {
   return c.json(data);
 });
 
+app.get('/install/ponder.cfg', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8');
+  c.header(
+    'Content-Disposition',
+    'attachment; filename="gamestate_integration_ponder.cfg"',
+  );
+  return c.text(ponderCfg);
+});
+
+app.get('/install/windows.ps1', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8');
+  return c.text(windowsInstallScript);
+});
+
+app.get('/install/linux.sh', (c) => {
+  c.header('Content-Type', 'text/plain; charset=utf-8');
+  return c.text(linuxInstallScript);
+});
+
 app.put('/api/mappings', async (c) => {
   const data = (await c.req.json()) as MappingEntry[];
   await Bun.write('mapping.json', JSON.stringify(data, null, 2));
@@ -462,7 +637,12 @@ app.get('/', async (c) => {
 });
 
 app.post('/', async (c) => {
-  const payload = await c.req.json();
+  const payload = (await c.req.json()) as ({
+    previously?: Record<string, unknown>;
+    player: { accountid: number };
+    map: { matchid: number; game_time: number };
+    provider: { timestamp: number };
+  } & Record<string, unknown>);
   if (payload.previously) {
     const ctx: GameEventContext = {
       accountID: payload.player.accountid,
