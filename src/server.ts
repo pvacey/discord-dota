@@ -1,4 +1,5 @@
 import { watch } from 'fs';
+import { readdir } from 'fs/promises';
 
 import { Hono } from 'hono';
 import pino from 'pino';
@@ -6,6 +7,20 @@ import pino from 'pino';
 import type { GameEventContext, MappingEntry, Settings } from './types.js';
 import { logger, connections } from './discord.js';
 import { logEvent, logRawRequest } from './clickhouse.js';
+
+const SOUNDS_DIR = 'sounds/';
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+async function getSoundFiles(): Promise<string[]> {
+  try {
+    const entries = await readdir(SOUNDS_DIR);
+    return entries
+      .filter(f => f.endsWith('.mp3') && !f.startsWith('.'))
+      .toSorted();
+  } catch {
+    return [];
+  }
+}
 
 export const loggerServer = pino({
   level: 'debug',
@@ -146,6 +161,58 @@ app.put('/api/mappings', async (c) => {
   return c.json({ success: true });
 });
 
+app.get('/api/sounds', async (c) => {
+  const sounds = await getSoundFiles();
+  return c.json(sounds);
+});
+
+app.get('/api/sounds/:name', async (c) => {
+  const name = c.req.param('name');
+  const allowed = await getSoundFiles();
+  if (!allowed.includes(name)) {
+    return c.text('Not found', 404);
+  }
+  const file = Bun.file(SOUNDS_DIR + name);
+  return c.body(file.stream(), {
+    headers: {
+      'Content-Type': 'audio/mpeg',
+      'Content-Disposition': `inline; filename="${name}"`,
+    },
+  });
+});
+
+app.post('/api/sounds', async (c) => {
+  const formData = await c.req.formData();
+  const file = formData.get('file') as File | null;
+  if (!file || !(file instanceof File)) {
+    return c.text('No file provided', 400);
+  }
+  if (!file.name.toLowerCase().endsWith('.mp3')) {
+    return c.text('Only MP3 files allowed', 400);
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    return c.text('File too large (max 10MB)', 400);
+  }
+  const name = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  if (name.startsWith('.')) {
+    return c.text('Hidden files not allowed', 400);
+  }
+  const dest = Bun.file(SOUNDS_DIR + name);
+  await Bun.write(dest, file);
+  return c.json({ success: true, name });
+});
+
+app.delete('/api/sounds/:name', async (c) => {
+  const name = c.req.param('name');
+  const allowed = await getSoundFiles();
+  if (!allowed.includes(name)) {
+    return c.text('Not found', 404);
+  }
+  const file = Bun.file(SOUNDS_DIR + name);
+  await file.delete();
+  return c.json({ success: true });
+});
+
 app.get('/', async (c) => {
   const file = Bun.file('./public/index.html');
   return c.html(await file.text());
@@ -169,4 +236,8 @@ app.post('/', async (c) => {
 
 export function startServer(port = 3000): void {
   logger.info(`Hono server starting on port ${port}`);
+  Bun.serve({
+    fetch: app.fetch,
+    port,
+  });
 }

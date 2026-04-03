@@ -57,8 +57,6 @@ async function flushRawRequests(): Promise<void> {
   }
 }
 
-setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
-setInterval(flushRawRequests, FLUSH_INTERVAL_MS);
 
 export async function logEvent(
   accountID: number,
@@ -129,4 +127,6 @@ function getDeepKeys(obj: unknown, prefix = ''): string[] {
 
 export function startClickHouse(): void {
   logger.info('ClickHouse client initialized');
+  setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
+  setInterval(flushRawRequests, FLUSH_INTERVAL_MS);
 }

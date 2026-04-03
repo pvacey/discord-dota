@@ -30,6 +30,8 @@ export const logger = pino({
 
 export const connections: Record<string, VoiceConnection> = {};
 
+const SOUNDS_DIR = 'sounds/';
+
 export class VoiceConnection {
   player: AudioPlayer;
   guild: Guild;
@@ -64,7 +66,7 @@ export class VoiceConnection {
     if (!this.subscription) {
       this.subscription = this.connection.subscribe(this.player);
     }
-    const resource = createAudioResource(fileName);
+    const resource = createAudioResource(SOUNDS_DIR + fileName);
     this.player.play(resource);
   }
 }
@@ -135,7 +137,7 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if (!connections[newState.channelId]) {
       connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client);
     }
-    connections[newState.channelId]!.playSound('https://www.myinstants.com/media/sounds/open-aim.mp3');
+    connections[newState.channelId]!.playSound('open-aim.mp3');
   }
 
   if (oldState.channelId && !newState.channelId) {
