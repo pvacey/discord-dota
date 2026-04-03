@@ -15,7 +15,7 @@ async function getSoundFiles(): Promise<string[]> {
   try {
     const entries = await readdir(SOUNDS_DIR);
     return entries
-      .filter(f => f.endsWith('.mp3'))
+      .filter(f => f.endsWith('.mp3') && !f.startsWith('.'))
       .toSorted();
   } catch {
     return [];
@@ -168,10 +168,11 @@ app.get('/api/sounds', async (c) => {
 
 app.get('/api/sounds/:name', async (c) => {
   const name = c.req.param('name');
-  const file = Bun.file(SOUNDS_DIR + name);
-  if (!(await file.exists())) {
+  const allowed = await getSoundFiles();
+  if (!allowed.includes(name)) {
     return c.text('Not found', 404);
   }
+  const file = Bun.file(SOUNDS_DIR + name);
   return c.body(file.stream(), {
     headers: {
       'Content-Type': 'audio/mpeg',
@@ -193,6 +194,9 @@ app.post('/api/sounds', async (c) => {
     return c.text('File too large (max 10MB)', 400);
   }
   const name = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  if (name.startsWith('.')) {
+    return c.text('Hidden files not allowed', 400);
+  }
   const dest = Bun.file(SOUNDS_DIR + name);
   await Bun.write(dest, file);
   return c.json({ success: true, name });
@@ -200,10 +204,11 @@ app.post('/api/sounds', async (c) => {
 
 app.delete('/api/sounds/:name', async (c) => {
   const name = c.req.param('name');
-  const file = Bun.file(SOUNDS_DIR + name);
-  if (!(await file.exists())) {
+  const allowed = await getSoundFiles();
+  if (!allowed.includes(name)) {
     return c.text('Not found', 404);
   }
+  const file = Bun.file(SOUNDS_DIR + name);
   await file.delete();
   return c.json({ success: true });
 });
