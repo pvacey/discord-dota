@@ -339,6 +339,105 @@
         }
       }
 
+      .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 24px;
+      }
+      .tab {
+        padding: 12px 24px;
+        border-radius: 10px;
+        background: var(--card-bg);
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: inherit;
+        transition: all 0.2s;
+      }
+      .tab:hover {
+        border-color: rgba(88, 166, 255, 0.4);
+        color: var(--text);
+      }
+      .tab.active {
+        background: var(--accent);
+        color: #000;
+        border-color: var(--accent);
+      }
+
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      .sound-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .sound-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .sound-item:hover {
+        border-color: rgba(88, 166, 255, 0.4);
+      }
+      .sound-name {
+        flex: 1;
+        font-size: 14px;
+        color: var(--text);
+        word-break: break-all;
+      }
+      .sound-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .upload-area {
+        padding: 32px;
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 24px;
+        transition: all 0.2s;
+      }
+      .upload-area:hover {
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+      }
+      .upload-area input[type='file'] {
+        display: none;
+      }
+      .upload-label {
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+      .upload-label:hover {
+        color: var(--text);
+      }
+
+      .mapping-item.broken {
+        border-color: var(--danger);
+        box-shadow: 0 0 0 2px rgba(248, 81, 73, 0.2);
+      }
+      .mapping-item.broken .field select {
+        border-color: var(--danger);
+      }
+      .mapping-number {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        min-width: 28px;
+      }
+
       @media (max-width: 700px) {
         .mapping-item {
           flex-wrap: wrap;
@@ -375,182 +474,210 @@
       </h1>
       <div id="msg" class="msg"></div>
 
-      <div class="card">
-        <h3>Add Mapping</h3>
-        <div style="margin-top: 20px">
-          <div class="field-group">
-            <div class="field">
-              <label>Event Name</label>
-              <select id="newEvent">
-                <optgroup label="Map">
-                  <option value="map.name">map.name</option>
-                  <option value="map.matchid">map.matchid</option>
-                  <option value="map.game_time">map.game_time</option>
-                  <option value="map.clock_time">map.clock_time</option>
-                  <option value="map.daytime">map.daytime</option>
-                  <option value="map.nightstalker_night">map.nightstalker_night</option>
-                  <option value="map.radiant_score">map.radiant_score</option>
-                  <option value="map.dire_score">map.dire_score</option>
-                  <option value="map.game_state">map.game_state</option>
-                  <option value="map.paused">map.paused</option>
-                  <option value="map.win_team">map.win_team</option>
-                  <option value="map.customgamename">map.customgamename</option>
-                  <option value="map.ward_purchase_cooldown">map.ward_purchase_cooldown</option>
-                </optgroup>
-                <optgroup label="Player">
-                  <option value="player.steamid">player.steamid</option>
-                  <option value="player.accountid">player.accountid</option>
-                  <option value="player.name">player.name</option>
-                  <option value="player.activity">player.activity</option>
-                  <option value="player.kills">player.kills</option>
-                  <option value="player.deaths">player.deaths</option>
-                  <option value="player.assists">player.assists</option>
-                  <option value="player.last_hits">player.last_hits</option>
-                  <option value="player.denies">player.denies</option>
-                  <option value="player.kill_streak">player.kill_streak</option>
-                  <option value="player.commands_issued">player.commands_issued</option>
-                  <option value="player.team_name">player.team_name</option>
-                  <option value="player.player_slot">player.player_slot</option>
-                  <option value="player.team_slot">player.team_slot</option>
-                  <option value="player.gold">player.gold</option>
-                  <option value="player.gold_reliable">player.gold_reliable</option>
-                  <option value="player.gold_unreliable">player.gold_unreliable</option>
-                  <option value="player.gold_from_hero_kills">player.gold_from_hero_kills</option>
-                  <option value="player.gold_from_creep_kills">player.gold_from_creep_kills</option>
-                  <option value="player.gold_from_income">player.gold_from_income</option>
-                  <option value="player.gold_from_shared">player.gold_from_shared</option>
-                  <option value="player.gpm">player.gpm</option>
-                  <option value="player.xpm">player.xpm</option>
-                </optgroup>
-                <optgroup label="Hero">
-                  <option value="hero.facet">hero.facet</option>
-                  <option value="hero.xpos">hero.xpos</option>
-                  <option value="hero.ypos">hero.ypos</option>
-                  <option value="hero.id">hero.id</option>
-                  <option value="hero.name">hero.name</option>
-                  <option value="hero.level">hero.level</option>
-                  <option value="hero.xp">hero.xp</option>
-                  <option value="hero.alive">hero.alive</option>
-                  <option value="hero.respawn_seconds">hero.respawn_seconds</option>
-                  <option value="hero.buyback_cost">hero.buyback_cost</option>
-                  <option value="hero.buyback_cooldown">hero.buyback_cooldown</option>
-                  <option value="hero.health">hero.health</option>
-                  <option value="hero.max_health">hero.max_health</option>
-                  <option value="hero.health_percent">hero.health_percent</option>
-                  <option value="hero.mana">hero.mana</option>
-                  <option value="hero.max_mana">hero.max_mana</option>
-                  <option value="hero.mana_percent">hero.mana_percent</option>
-                  <option value="hero.silenced">hero.silenced</option>
-                  <option value="hero.stunned">hero.stunned</option>
-                  <option value="hero.disarmed">hero.disarmed</option>
-                  <option value="hero.magicimmune">hero.magicimmune</option>
-                  <option value="hero.hexed">hero.hexed</option>
-                  <option value="hero.muted">hero.muted</option>
-                  <option value="hero.break">hero.break</option>
-                  <option value="hero.aghanims_scepter">hero.aghanims_scepter</option>
-                  <option value="hero.aghanims_shard">hero.aghanims_shard</option>
-                  <option value="hero.smoked">hero.smoked</option>
-                  <option value="hero.has_debuff">hero.has_debuff</option>
-                  <option value="hero.talent_1">hero.talent_1</option>
-                  <option value="hero.talent_2">hero.talent_2</option>
-                  <option value="hero.talent_3">hero.talent_3</option>
-                  <option value="hero.talent_4">hero.talent_4</option>
-                  <option value="hero.talent_5">hero.talent_5</option>
-                  <option value="hero.talent_6">hero.talent_6</option>
-                  <option value="hero.talent_7">hero.talent_7</option>
-                  <option value="hero.talent_8">hero.talent_8</option>
-                  <option value="hero.attributes_level">hero.attributes_level</option>
-                </optgroup>
-                <optgroup label="Abilities">
-                  <option value="abilities.ability0.name">abilities.ability0.name</option>
-                  <option value="abilities.ability0.level">abilities.ability0.level</option>
-                  <option value="abilities.ability0.can_cast">abilities.ability0.can_cast</option>
-                  <option value="abilities.ability0.passive">abilities.ability0.passive</option>
-                  <option value="abilities.ability0.ability_active">abilities.ability0.ability_active</option>
-                  <option value="abilities.ability0.cooldown">abilities.ability0.cooldown</option>
-                  <option value="abilities.ability0.max_cooldown">abilities.ability0.max_cooldown</option>
-                  <option value="abilities.ability0.ultimate">abilities.ability0.ultimate</option>
-                  <option value="abilities.ability1.name">abilities.ability1.name</option>
-                  <option value="abilities.ability1.level">abilities.ability1.level</option>
-                  <option value="abilities.ability1.can_cast">abilities.ability1.can_cast</option>
-                  <option value="abilities.ability1.passive">abilities.ability1.passive</option>
-                  <option value="abilities.ability1.ability_active">abilities.ability1.ability_active</option>
-                  <option value="abilities.ability1.cooldown">abilities.ability1.cooldown</option>
-                  <option value="abilities.ability1.max_cooldown">abilities.ability1.max_cooldown</option>
-                  <option value="abilities.ability1.ultimate">abilities.ability1.ultimate</option>
-                  <option value="abilities.ability2.name">abilities.ability2.name</option>
-                  <option value="abilities.ability2.level">abilities.ability2.level</option>
-                  <option value="abilities.ability2.can_cast">abilities.ability2.can_cast</option>
-                  <option value="abilities.ability2.passive">abilities.ability2.passive</option>
-                  <option value="abilities.ability2.ability_active">abilities.ability2.ability_active</option>
-                  <option value="abilities.ability2.cooldown">abilities.ability2.cooldown</option>
-                  <option value="abilities.ability2.max_cooldown">abilities.ability2.max_cooldown</option>
-                  <option value="abilities.ability2.ultimate">abilities.ability2.ultimate</option>
-                  <option value="abilities.ability3.name">abilities.ability3.name</option>
-                  <option value="abilities.ability3.level">abilities.ability3.level</option>
-                  <option value="abilities.ability3.can_cast">abilities.ability3.can_cast</option>
-                  <option value="abilities.ability3.passive">abilities.ability3.passive</option>
-                  <option value="abilities.ability3.ability_active">abilities.ability3.ability_active</option>
-                  <option value="abilities.ability3.cooldown">abilities.ability3.cooldown</option>
-                  <option value="abilities.ability3.max_cooldown">abilities.ability3.max_cooldown</option>
-                  <option value="abilities.ability3.ultimate">abilities.ability3.ultimate</option>
-                </optgroup>
-                <optgroup label="Items">
-                  <option value="items.slot0.name">items.slot0.name</option>
-                  <option value="items.slot1.name">items.slot1.name</option>
-                  <option value="items.slot2.name">items.slot2.name</option>
-                  <option value="items.slot3.name">items.slot3.name</option>
-                  <option value="items.slot4.name">items.slot4.name</option>
-                  <option value="items.slot5.name">items.slot5.name</option>
-                  <option value="items.slot6.name">items.slot6.name</option>
-                  <option value="items.slot7.name">items.slot7.name</option>
-                  <option value="items.slot8.name">items.slot8.name</option>
-                  <option value="items.teleport0.name">items.teleport0.name</option>
-                  <option value="items.neutral0.name">items.neutral0.name</option>
-                </optgroup>
-                <optgroup label="Buildings">
-                  <option value="buildings.dire">buildings.dire</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="field">
-              <label>Audio Clip URL</label>
-              <div style="display: flex; gap: 8px">
-                <input type="text" id="newSound" placeholder="sound URL" style="flex: 1" />
-                <button type="button" class="btn-icon btn-play" onclick="playNewSound()" title="Play">▶</button>
-              </div>
-            </div>
-            <div class="field small">
-              <label>Condition</label>
-              <select id="newCondition" onchange="updateValueField()">
-                <option value=">">&gt;</option>
-                <option value="<">&lt;</option>
-                <option value="===" selected>=</option>
-                <option value="!==">!=</option>
-                <option value="*">*</option>
-              </select>
-            </div>
-            <div class="field tiny">
-              <label>Value</label>
-              <input type="text" id="newValue" value="" />
-            </div>
-            <button class="btn-primary" onclick="addMapping()">Add</button>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('mappings')">Mappings</button>
+        <button class="tab" onclick="switchTab('sounds')">Sounds</button>
+      </div>
+
+      <div id="tab-sounds" class="tab-content">
+        <div class="card">
+          <h3>Upload Sound</h3>
+          <div class="upload-area">
+            <label class="upload-label">
+              <input type="file" id="soundFile" accept=".mp3" onchange="uploadSound()" />
+              Click to upload MP3 (max 10MB)
+            </label>
           </div>
+          <h3>Sound Files</h3>
+          <div id="soundList" class="sound-list"></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <h3>Mappings</h3>
-          <button class="btn-primary" onclick="saveAll()">Save Changes</button>
+      <div id="tab-mappings" class="tab-content active">
+        <div class="card">
+          <h3>Add Mapping</h3>
+          <div style="margin-top: 20px">
+            <div class="field-group">
+              <div class="field">
+                <label>Event Name</label>
+                <select id="newEvent">
+                  <optgroup label="Map">
+                    <option value="map.name">map.name</option>
+                    <option value="map.matchid">map.matchid</option>
+                    <option value="map.game_time">map.game_time</option>
+                    <option value="map.clock_time">map.clock_time</option>
+                    <option value="map.daytime">map.daytime</option>
+                    <option value="map.nightstalker_night">map.nightstalker_night</option>
+                    <option value="map.radiant_score">map.radiant_score</option>
+                    <option value="map.dire_score">map.dire_score</option>
+                    <option value="map.game_state">map.game_state</option>
+                    <option value="map.paused">map.paused</option>
+                    <option value="map.win_team">map.win_team</option>
+                    <option value="map.customgamename">map.customgamename</option>
+                    <option value="map.ward_purchase_cooldown">map.ward_purchase_cooldown</option>
+                  </optgroup>
+                  <optgroup label="Player">
+                    <option value="player.steamid">player.steamid</option>
+                    <option value="player.accountid">player.accountid</option>
+                    <option value="player.name">player.name</option>
+                    <option value="player.activity">player.activity</option>
+                    <option value="player.kills">player.kills</option>
+                    <option value="player.deaths">player.deaths</option>
+                    <option value="player.assists">player.assists</option>
+                    <option value="player.last_hits">player.last_hits</option>
+                    <option value="player.denies">player.denies</option>
+                    <option value="player.kill_streak">player.kill_streak</option>
+                    <option value="player.commands_issued">player.commands_issued</option>
+                    <option value="player.team_name">player.team_name</option>
+                    <option value="player.player_slot">player.player_slot</option>
+                    <option value="player.team_slot">player.team_slot</option>
+                    <option value="player.gold">player.gold</option>
+                    <option value="player.gold_reliable">player.gold_reliable</option>
+                    <option value="player.gold_unreliable">player.gold_unreliable</option>
+                    <option value="player.gold_from_hero_kills">player.gold_from_hero_kills</option>
+                    <option value="player.gold_from_creep_kills">player.gold_from_creep_kills</option>
+                    <option value="player.gold_from_income">player.gold_from_income</option>
+                    <option value="player.gold_from_shared">player.gold_from_shared</option>
+                    <option value="player.gpm">player.gpm</option>
+                    <option value="player.xpm">player.xpm</option>
+                  </optgroup>
+                  <optgroup label="Hero">
+                    <option value="hero.facet">hero.facet</option>
+                    <option value="hero.xpos">hero.xpos</option>
+                    <option value="hero.ypos">hero.ypos</option>
+                    <option value="hero.id">hero.id</option>
+                    <option value="hero.name">hero.name</option>
+                    <option value="hero.level">hero.level</option>
+                    <option value="hero.xp">hero.xp</option>
+                    <option value="hero.alive">hero.alive</option>
+                    <option value="hero.respawn_seconds">hero.respawn_seconds</option>
+                    <option value="hero.buyback_cost">hero.buyback_cost</option>
+                    <option value="hero.buyback_cooldown">hero.buyback_cooldown</option>
+                    <option value="hero.health">hero.health</option>
+                    <option value="hero.max_health">hero.max_health</option>
+                    <option value="hero.health_percent">hero.health_percent</option>
+                    <option value="hero.mana">hero.mana</option>
+                    <option value="hero.max_mana">hero.max_mana</option>
+                    <option value="hero.mana_percent">hero.mana_percent</option>
+                    <option value="hero.silenced">hero.silenced</option>
+                    <option value="hero.stunned">hero.stunned</option>
+                    <option value="hero.disarmed">hero.disarmed</option>
+                    <option value="hero.magicimmune">hero.magicimmune</option>
+                    <option value="hero.hexed">hero.hexed</option>
+                    <option value="hero.muted">hero.muted</option>
+                    <option value="hero.break">hero.break</option>
+                    <option value="hero.aghanims_scepter">hero.aghanims_scepter</option>
+                    <option value="hero.aghanims_shard">hero.aghanims_shard</option>
+                    <option value="hero.smoked">hero.smoked</option>
+                    <option value="hero.has_debuff">hero.has_debuff</option>
+                    <option value="hero.talent_1">hero.talent_1</option>
+                    <option value="hero.talent_2">hero.talent_2</option>
+                    <option value="hero.talent_3">hero.talent_3</option>
+                    <option value="hero.talent_4">hero.talent_4</option>
+                    <option value="hero.talent_5">hero.talent_5</option>
+                    <option value="hero.talent_6">hero.talent_6</option>
+                    <option value="hero.talent_7">hero.talent_7</option>
+                    <option value="hero.talent_8">hero.talent_8</option>
+                    <option value="hero.attributes_level">hero.attributes_level</option>
+                  </optgroup>
+                  <optgroup label="Abilities">
+                    <option value="abilities.ability0.name">abilities.ability0.name</option>
+                    <option value="abilities.ability0.level">abilities.ability0.level</option>
+                    <option value="abilities.ability0.can_cast">abilities.ability0.can_cast</option>
+                    <option value="abilities.ability0.passive">abilities.ability0.passive</option>
+                    <option value="abilities.ability0.ability_active">abilities.ability0.ability_active</option>
+                    <option value="abilities.ability0.cooldown">abilities.ability0.cooldown</option>
+                    <option value="abilities.ability0.max_cooldown">abilities.ability0.max_cooldown</option>
+                    <option value="abilities.ability0.ultimate">abilities.ability0.ultimate</option>
+                    <option value="abilities.ability1.name">abilities.ability1.name</option>
+                    <option value="abilities.ability1.level">abilities.ability1.level</option>
+                    <option value="abilities.ability1.can_cast">abilities.ability1.can_cast</option>
+                    <option value="abilities.ability1.passive">abilities.ability1.passive</option>
+                    <option value="abilities.ability1.ability_active">abilities.ability1.ability_active</option>
+                    <option value="abilities.ability1.cooldown">abilities.ability1.cooldown</option>
+                    <option value="abilities.ability1.max_cooldown">abilities.ability1.max_cooldown</option>
+                    <option value="abilities.ability1.ultimate">abilities.ability1.ultimate</option>
+                    <option value="abilities.ability2.name">abilities.ability2.name</option>
+                    <option value="abilities.ability2.level">abilities.ability2.level</option>
+                    <option value="abilities.ability2.can_cast">abilities.ability2.can_cast</option>
+                    <option value="abilities.ability2.passive">abilities.ability2.passive</option>
+                    <option value="abilities.ability2.ability_active">abilities.ability2.ability_active</option>
+                    <option value="abilities.ability2.cooldown">abilities.ability2.cooldown</option>
+                    <option value="abilities.ability2.max_cooldown">abilities.ability2.max_cooldown</option>
+                    <option value="abilities.ability2.ultimate">abilities.ability2.ultimate</option>
+                    <option value="abilities.ability3.name">abilities.ability3.name</option>
+                    <option value="abilities.ability3.level">abilities.ability3.level</option>
+                    <option value="abilities.ability3.can_cast">abilities.ability3.can_cast</option>
+                    <option value="abilities.ability3.passive">abilities.ability3.passive</option>
+                    <option value="abilities.ability3.ability_active">abilities.ability3.ability_active</option>
+                    <option value="abilities.ability3.cooldown">abilities.ability3.cooldown</option>
+                    <option value="abilities.ability3.max_cooldown">abilities.ability3.max_cooldown</option>
+                    <option value="abilities.ability3.ultimate">abilities.ability3.ultimate</option>
+                  </optgroup>
+                  <optgroup label="Items">
+                    <option value="items.slot0.name">items.slot0.name</option>
+                    <option value="items.slot1.name">items.slot1.name</option>
+                    <option value="items.slot2.name">items.slot2.name</option>
+                    <option value="items.slot3.name">items.slot3.name</option>
+                    <option value="items.slot4.name">items.slot4.name</option>
+                    <option value="items.slot5.name">items.slot5.name</option>
+                    <option value="items.slot6.name">items.slot6.name</option>
+                    <option value="items.slot7.name">items.slot7.name</option>
+                    <option value="items.slot8.name">items.slot8.name</option>
+                    <option value="items.teleport0.name">items.teleport0.name</option>
+                    <option value="items.neutral0.name">items.neutral0.name</option>
+                  </optgroup>
+                  <optgroup label="Buildings">
+                    <option value="buildings.dire">buildings.dire</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="field">
+                <label>Sound</label>
+                <select id="newSound">
+                  <option value="">Select a sound...</option>
+                </select>
+              </div>
+              <div class="field small">
+                <label>Condition</label>
+                <select id="newCondition" onchange="updateValueField()">
+                  <option value=">">&gt;</option>
+                  <option value="<">&lt;</option>
+                  <option value="===" selected>=</option>
+                  <option value="!==">!=</option>
+                  <option value="*">*</option>
+                </select>
+              </div>
+              <div class="field tiny">
+                <label>Value</label>
+                <input type="text" id="newValue" value="" />
+              </div>
+              <button class="btn-primary" onclick="addMapping()">Add</button>
+            </div>
+          </div>
         </div>
-        <div id="list"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Mappings</h3>
+            <button class="btn-primary" onclick="saveAll()">Save Changes</button>
+          </div>
+          <div id="list"></div>
+        </div>
       </div>
     </div>
 
     <script>
       let currentAudio = null;
       let currentBtn = null;
+      let sounds = [];
+
+      function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
+      }
 
       function playSound(url, btn) {
         if (!url) return;
@@ -588,9 +715,90 @@
       }
 
       function playNewSound() {
-        const url = document.getElementById('newSound').value.trim();
+        const select = document.getElementById('newSound');
+        if (!select.value) return;
         const btn = document.querySelector('#newEvent').closest('.field-group').querySelector('.btn-play');
-        playSound(url, btn);
+        playSound('/api/sounds/' + encodeURIComponent(select.value), btn);
+      }
+
+      async function loadSounds() {
+        const res = await fetch('/api/sounds');
+        sounds = await res.json();
+        renderSoundOptions();
+        renderSoundsList();
+      }
+
+      function renderSoundOptions() {
+        const selects = [document.getElementById('newSound')];
+        document.querySelectorAll('.mapping-item .field:first-child + .field select').forEach(s => {
+          if (s.id !== 'newSound') selects.push(s);
+        });
+
+        selects.forEach(select => {
+          const currentVal = select.value;
+          select.innerHTML = '<option value="">Select a sound...</option>' +
+            sounds.map(s => `<option value="${s}">${s}</option>`).join('');
+          if (sounds.includes(currentVal)) {
+            select.value = currentVal;
+          }
+        });
+      }
+
+      function renderSoundsList() {
+        const list = document.getElementById('soundList');
+        if (sounds.length === 0) {
+          list.innerHTML = '<div class="empty">No sounds uploaded yet.</div>';
+          return;
+        }
+        list.innerHTML = sounds.map(s => `
+          <div class="sound-item">
+            <span class="sound-name">${s}</span>
+            <div class="sound-actions">
+              <button class="btn-icon btn-play" onclick="playSound('/api/sounds/${encodeURIComponent(s)}', this)" title="Play">▶</button>
+              <a href="/api/sounds/${encodeURIComponent(s)}" download="${s}" class="btn-icon" title="Download">↓</a>
+              <button class="btn-icon danger" onclick="deleteSound('${s}')" title="Delete">✕</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function uploadSound() {
+        const fileInput = document.getElementById('soundFile');
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const res = await fetch('/api/sounds', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (res.ok) {
+          showMsg('Sound uploaded successfully', 'success');
+          await loadSounds();
+        } else {
+          const err = await res.text();
+          showMsg(err || 'Upload failed', 'error');
+        }
+        fileInput.value = '';
+      }
+
+      async function deleteSound(name) {
+        if (!confirm(`Delete "${name}"?`)) return;
+
+        const res = await fetch('/api/sounds/' + encodeURIComponent(name), {
+          method: 'DELETE',
+        });
+
+        if (res.ok) {
+          showMsg('Sound deleted', 'success');
+          await loadSounds();
+          render();
+        } else {
+          showMsg('Delete failed', 'error');
+        }
       }
 
       let mappings = [];
@@ -600,6 +808,7 @@
         const res = await fetch('/api/mappings');
         mappings = await res.json();
         originalMappings = JSON.parse(JSON.stringify(mappings));
+        await loadSounds();
         render();
       }
 
@@ -607,8 +816,17 @@
         return JSON.stringify(mappings) !== JSON.stringify(originalMappings);
       }
 
+      function hasBrokenMappings() {
+        return mappings.some(m => !sounds.includes(m.sound));
+      }
+
       function updateSaveButton() {
-        document.querySelector('.card-header .btn-primary').disabled = !isDirty();
+        const btn = document.querySelector('.card-header .btn-primary');
+        btn.disabled = !isDirty() || hasBrokenMappings();
+      }
+
+      function isSoundBroken(sound) {
+        return !sounds.includes(sound);
       }
 
       function render() {
@@ -619,12 +837,16 @@
         }
         list.innerHTML = mappings
           .map(
-            (m, i) => `
-        <div class="mapping-item">
+            (m, i) => {
+              const broken = isSoundBroken(m.sound);
+              const num = i + 1;
+              return `
+        <div class="mapping-item ${broken ? 'broken' : ''}">
           <div class="order-btns">
             <button class="btn-icon" onclick="move(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
             <button class="btn-icon" onclick="move(${i}, 1)" ${i === mappings.length - 1 ? 'disabled' : ''}>▼</button>
           </div>
+          <span class="mapping-number">#${num}</span>
           <div class="mapping-row">
             <div class="field">
               <label>Event Name</label>
@@ -761,10 +983,13 @@
               </select>
             </div>
             <div class="field">
-              <label>Audio Clip URL</label>
+              <label>Sound ${broken ? '<span style="color:var(--danger)">(missing)</span>' : ''}</label>
               <div style="display: flex; gap: 8px;">
-                <input type="text" value="${m.sound}" onchange="update(${i}, 'sound', this.value)" placeholder="sound URL" style="flex: 1;">
-                <button type="button" class="btn-icon btn-play" onclick="playSound('${m.sound}', this)" title="Play">▶</button>
+                <select onchange="update(${i}, 'sound', this.value)">
+                  <option value="">Select a sound...</option>
+                  ${sounds.map(s => `<option value="${s}" ${m.sound === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+                <button type="button" class="btn-icon btn-play" onclick="playSound('/api/sounds/${encodeURIComponent(m.sound)}', this)" title="Play" ${!m.sound ? 'disabled' : ''}>▶</button>
               </div>
             </div>
             <div class="field small">
@@ -786,7 +1011,8 @@
             <button class="btn-icon danger" onclick="remove(${i})">✕</button>
           </div>
         </div>
-      `,
+      `;
+            },
           )
           .join('');
         updateSaveButton();
@@ -795,7 +1021,7 @@
       function update(idx, key, val) {
         if (key === 'value') val = parseValue(val);
         mappings[idx][key] = val;
-        updateSaveButton();
+        render();
       }
 
       function updateRowValueField(idx, condition) {
@@ -818,7 +1044,7 @@
 
       function addMapping() {
         const event = document.getElementById('newEvent').value.trim();
-        const sound = document.getElementById('newSound').value.trim();
+        const sound = document.getElementById('newSound').value;
         const condition = document.getElementById('newCondition').value;
         const rawValue = document.getElementById('newValue').value;
         const value = condition === '*' ? undefined : parseValue(rawValue);
@@ -859,6 +1085,11 @@
       }
 
       async function saveAll() {
+        if (hasBrokenMappings()) {
+          showMsg('Fix broken mappings before saving', 'error');
+          return;
+        }
+
         const res = await fetch('/api/mappings', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
