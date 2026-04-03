@@ -231,4 +231,8 @@ app.post('/', async (c) => {
 
 export function startServer(port = 3000): void {
   logger.info(`Hono server starting on port ${port}`);
+  Bun.serve({
+    fetch: app.fetch,
+    port,
+  });
 }

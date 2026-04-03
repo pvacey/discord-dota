@@ -407,6 +407,7 @@
         text-align: center;
         margin-bottom: 24px;
         transition: all 0.2s;
+        cursor: pointer;
       }
       .upload-area:hover {
         border-color: var(--accent);
@@ -431,13 +432,6 @@
       .mapping-item.broken .field select {
         border-color: var(--danger);
       }
-      .mapping-number {
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-muted);
-        min-width: 28px;
-      }
-
       @media (max-width: 700px) {
         .mapping-item {
           flex-wrap: wrap;
@@ -482,7 +476,7 @@
       <div id="tab-sounds" class="tab-content">
         <div class="card">
           <h3>Upload Sound</h3>
-          <div class="upload-area">
+          <div class="upload-area" onclick="document.getElementById('soundFile').click()">
             <label class="upload-label">
               <input type="file" id="soundFile" accept=".mp3" onchange="uploadSound()" />
               Click to upload MP3 (max 10MB)
@@ -846,7 +840,7 @@
             <button class="btn-icon" onclick="move(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
             <button class="btn-icon" onclick="move(${i}, 1)" ${i === mappings.length - 1 ? 'disabled' : ''}>▼</button>
           </div>
-          <span class="mapping-number">#${num}</span>
+
           <div class="mapping-row">
             <div class="field">
               <label>Event Name</label>
