@@ -1,7 +1,7 @@
 import { createClient as createClickHouseClient } from '@clickhouse/client';
 
-import type { ClickHouseRow, GameEvent } from './types.js';
-import { logger } from './logger.js';
+import type { ClickHouseRow } from './types.js';
+import { logger } from './discord.js';
 
 const clickhouseClient = createClickHouseClient({
   url: process.env.CLICKHOUSE_HOST || 'http://localhost:8123',
@@ -58,14 +58,21 @@ async function flushRawRequests(): Promise<void> {
 }
 
 
-export async function logEvent(e: GameEvent): Promise<void> {
+export async function logEvent(
+  accountID: number,
+  matchID: number,
+  timestamp: number,
+  gameTime: number,
+  key: string,
+  value: number,
+): Promise<void> {
   eventBuffer.push({
-    account_id: e.context.accountID,
-    match_id: e.context.matchID,
-    timestamp: e.context.timestamp,
-    game_time: e.context.gameTime,
-    event_key: e.name,
-    event_value: e.value as number,
+    account_id: accountID,
+    match_id: matchID,
+    timestamp: timestamp,
+    game_time: gameTime,
+    event_key: key,
+    event_value: value,
   });
 
   if (eventBuffer.length >= BATCH_SIZE_THRESHOLD) {
