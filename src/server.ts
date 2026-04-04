@@ -2,11 +2,11 @@ import { watch } from 'fs';
 import { readdir } from 'fs/promises';
 
 import { Hono } from 'hono';
-import pino from 'pino';
 
-import type { GameEventContext, MappingEntry, Settings } from './types.js';
-import { logger, connections } from './discord.js';
+import type { GameEvent, GameEventContext, MappingEntry, Settings } from './types.js';
+import { connections } from './discord.js';
 import { logEvent, logRawRequest } from './clickhouse.js';
+import { logger } from './logger.js';
 
 const SOUNDS_DIR = 'sounds/';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -21,11 +21,6 @@ async function getSoundFiles(): Promise<string[]> {
     return [];
   }
 }
-
-export const loggerServer = pino({
-  level: 'debug',
-  timestamp: () => `,"time":"${new Date().toISOString()}"`,
-});
 
 const recursiveDiff = (
   prefix: string,
@@ -45,7 +40,11 @@ const recursiveDiff = (
       }
     } else {
       if (body[key] != null) {
-        handleGameEvent(`${prefix}${key}`, body[key] as string | number, context);
+        handleGameEvent({
+          name: `${prefix}${key}`,
+          value: body[key] as string | number,
+          context: context,
+        });
       }
     }
   }
@@ -79,17 +78,50 @@ const gameSummary = async (matchID: number): Promise<void> => {
   }
 };
 
-const handleGameEvent = async (eventName: string, value: string | number, context: GameEventContext): Promise<void> => {
-  if (!(eventName === 'map.game_time' || eventName === 'map.clock_time') && typeof value === 'number') {
-    logEvent(context.accountID, context.matchID, context.timestamp, context.gameTime, eventName, value);
+let suppressEvents: GameEvent[] = [];
+
+const isSuppressedEvent = (a: GameEvent, b: GameEvent): Boolean => {
+  // this will only compare event name and part of the context
+  return a.name === b.name &&
+    a.context.accountID === b.context.accountID &&
+    a.context.matchID === b.context.matchID &&
+    a.context.gameTime === b.context.gameTime;
+}
+
+const shouldSuppression = (e: GameEvent): Boolean => {
+  // checks all of the suppressEvents for a match
+  for (const [idx, s] of suppressEvents.entries()) {
+    if (isSuppressedEvent(e, s)) {
+      // drop this element from the array stop looping
+      suppressEvents.splice(idx, 1)
+      return true
+    }
+  }
+  return false
+}
+
+const handleGameEvent = async (event: GameEvent): Promise<void> => {
+  // check if this event should be suppressed
+  if (shouldSuppression(event)) {
+    logger.info({ event }, 'suppressing event')
+    return
   }
 
-  if (eventName === 'map.game_state' && value === 'DOTA_GAMERULES_STATE_POST_GAME' && !suppressReport) {
-    gameSummary(context.matchID);
+  logger.debug({ event }, 'handling event');
+
+  if (!(event.name === 'map.game_time' || event.name === 'map.clock_time') && typeof event.value === 'number') {
+    logEvent(event);
   }
+
+  if (event.name === 'map.game_state' && event.value === 'DOTA_GAMERULES_STATE_POST_GAME' && !suppressReport) {
+    gameSummary(event.context.matchID);
+    // lazy - cleanup any leftovers in suppressEvents at match end
+    suppressEvents = [];
+  }
+
 
   for (const obj of mapping) {
-    if (obj.event !== eventName) {
+    if (obj.event !== event.name) {
       continue;
     }
 
@@ -100,32 +132,42 @@ const handleGameEvent = async (eventName: string, value: string | number, contex
         break;
       }
       case '>': {
-        if (value > obj.value) {
+        if (event.value > obj.value) {
           play = true;
         }
         break;
       }
       case '<': {
-        if (value < obj.value) {
+        if (event.value < obj.value) {
           play = true;
         }
         break;
       }
       case '===': {
-        if (value === obj.value) {
+        if (event.value === obj.value) {
           play = true;
         }
         break;
       }
       case '!==': {
-        if (value !== obj.value) {
+        if (event.value !== obj.value) {
           play = true;
         }
         break;
       }
     }
     if (play) {
-      logger.debug({ context, obj }, 'triggered mapping');
+      // player.kills and player.kill_streak will always be seen together in the same payload
+      // if you get an event for player.kill_streak, suppress the player.kills with the matching context
+      // be careful reusing this pattern for other events there is nothing purging stale events in the suppressEvents array
+      if (event.name === 'player.kill_streak') {
+        suppressEvents.push({
+          name: 'player.kills',
+          value: 0, //value is required for the GameEvent type at the moment but not checked in the suppression logic
+          context: event.context
+        })
+      }
+      logger.info({ event, obj }, 'triggered mapping');
       for (const conn of Object.values(connections)) {
         conn.playSound(obj.sound);
       }
