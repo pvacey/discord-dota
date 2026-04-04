@@ -22,8 +22,11 @@ import {
 import pino from 'pino';
 
 import type { BotClient, Command } from './types.js';
-import { logger } from './logger.js';
-import { lookup } from 'node:dns';
+
+export const logger = pino({
+  level: 'debug',
+  timestamp: () => `,"time":"${new Date().toISOString()}"`,
+});
 
 export const connections: Record<string, VoiceConnection> = {};
 
@@ -113,13 +116,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     logger.error(error);
     await (interaction.replied || interaction.deferred
       ? interaction.followUp({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      })
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        })
       : interaction.reply({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      }));
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        }));
   }
 });
 

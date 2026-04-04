@@ -7,12 +7,6 @@ export interface MappingEntry {
   value: number | string;
 }
 
-export interface GameEvent {
-  name: string;
-  value: string | number;
-  context: GameEventContext;
-}
-
 export interface GameEventContext {
   accountID: number;
   matchID: number;
