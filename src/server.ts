@@ -178,7 +178,14 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
 
 const configFile = 'mapping.json';
 const config = Bun.file(configFile);
-let mapping: MappingEntry[] = await config.json();
+let mapping: MappingEntry[];
+
+if (await config.exists()) {
+  mapping = await config.json();
+} else {
+  await Bun.write(configFile, '[]');
+  mapping = [];
+}
 let suppressReport = false;
 
 watch(configFile, async (event) => {

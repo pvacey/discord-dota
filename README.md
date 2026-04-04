@@ -16,7 +16,7 @@ A Discord bot that integrates with DOTA2 Game State Integration (GSI) to trigger
 - [Bun](https://bun.sh/) v1.3.5+
 - DOTA2 with Game State Integration enabled
 - Discord Bot token
-- ClickHouse (embedded, or external)
+- ClickHouse (local or external)
 
 ## Setup
 
@@ -85,19 +85,45 @@ bun run dev
 
 ## Configuration
 
+### Component Toggle
+
+Control which components run using environment variables (all default to `true`):
+
+```env
+ENABLE_DISCORD=true       # Discord bot
+ENABLE_CLICKHOUSE=true    # ClickHouse logging
+ENABLE_SERVER=true        # HTTP server
+```
+
+**Methods to set:**
+
+1. In `.env` file:
+```env
+ENABLE_DISCORD=false
+ENABLE_CLICKHOUSE=false
+```
+
+2. Inline with bun command:
+```bash
+ENABLE_DISCORD=false bun run dev
+```
+
 ### Event-to-Sound Mappings (`mapping.json`)
 
+On first run, the app automatically creates `mapping.json` with an empty array `[]`. Edit via the Web UI at `http://localhost:3000/` or directly edit the file.
+
+Sample `mapping.json`:
 ```json
 [
   {
     "event": "player.deaths",
-    "sound": "https://example.com/fail.mp3",
+    "sound": "fail.mp3",
     "condition": ">",
     "value": 0
   },
   {
     "event": "player.kills",
-    "sound": "https://example.com/kill.mp3",
+    "sound": "kill.mp3",
     "condition": "===",
     "value": 10
   }
@@ -162,7 +188,7 @@ Access the built-in mapping editor at `http://localhost:3000/` to visually manag
 ## Scripts
 
 ```bash
-bun run dev          # Run with .env file
+bun run dev          # Run with .env file (with --watch for auto-reload on file changes)
 bun run typecheck    # TypeScript type checking
 bun run lint         # Lint code
 bun run lint:fix     # Fix linting issues
