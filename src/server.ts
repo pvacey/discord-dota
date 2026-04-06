@@ -1,4 +1,3 @@
-import { watch } from 'fs';
 import { readdir } from 'fs/promises';
 
 import { Hono } from 'hono';
@@ -79,6 +78,7 @@ const gameSummary = async (matchID: number): Promise<void> => {
 };
 
 let suppressEvents: GameEvent[] = [];
+const suppressedEvents = new Set<string>();
 
 const isSuppressedEvent = (a: GameEvent, b: GameEvent): Boolean => {
   // this will only compare event name and part of the context
@@ -157,6 +157,14 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
       }
     }
     if (play) {
+      if (obj.suppress) {
+        if (suppressedEvents.has(event.name)) {
+          logger.info({ event, obj }, 'supressing event')
+          continue;
+        }
+        suppressedEvents.add(event.name);
+        setTimeout(() => suppressedEvents.delete(event.name), 5000);
+      }
       // player.kills and player.kill_streak will always be seen together in the same payload
       // if you get an event for player.kill_streak, suppress the player.kills with the matching context
       // be careful reusing this pattern for other events there is nothing purging stale events in the suppressEvents array
@@ -187,13 +195,6 @@ if (await config.exists()) {
   mapping = [];
 }
 let suppressReport = false;
-
-watch(configFile, async (event) => {
-  if (event === 'change') {
-    mapping = await config.json();
-    logger.info('reload config file!');
-  }
-});
 
 export const app = new Hono();
 

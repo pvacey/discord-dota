@@ -5,6 +5,7 @@ export interface MappingEntry {
   sound: string;
   condition: '*' | '>' | '<' | '===' | '!==';
   value: number | string;
+  suppress?: boolean;
 }
 
 export interface GameEvent {

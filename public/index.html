@@ -128,6 +128,10 @@
         letter-spacing: 0.5px;
         margin-bottom: 8px;
       }
+      .field label.checkbox-label {
+        margin-bottom: 0;
+        cursor: pointer;
+      }
 
       input,
       select {
@@ -140,6 +144,13 @@
         font-size: 14px;
         font-family: inherit;
         transition: all 0.2s;
+      }
+      input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--accent);
+        cursor: pointer;
+        padding: 0;
       }
       input:focus,
       select:focus {
@@ -456,6 +467,7 @@
           justify-content: flex-end;
         }
       }
+
     </style>
   </head>
   <body>
@@ -645,6 +657,10 @@
               <div class="field tiny">
                 <label>Value</label>
                 <input type="text" id="newValue" value="" />
+              </div>
+              <div class="field small">
+                <label class="checkbox-label">Suppress</label>
+                <input type="checkbox" id="newSuppress" />
               </div>
               <button class="btn-primary" onclick="addMapping()">Add</button>
             </div>
@@ -1000,6 +1016,10 @@
               <label>Value</label>
               <input type="text" value="${m.condition === '*' ? '' : m.value !== undefined ? m.value : ''}" ${m.condition === '*' ? 'disabled' : ''} onchange="update(${i}, 'value', this.value)">
             </div>
+            <div class="field small">
+              <label class="checkbox-label">Suppress</label>
+              <input type="checkbox" ${m.suppress ? 'checked' : ''} onchange="update(${i}, 'suppress', this.checked)">
+            </div>
           </div>
           <div class="mapping-actions">
             <button class="btn-icon danger" onclick="remove(${i})">✕</button>
@@ -1042,13 +1062,14 @@
         const condition = document.getElementById('newCondition').value;
         const rawValue = document.getElementById('newValue').value;
         const value = condition === '*' ? undefined : parseValue(rawValue);
+        const suppress = document.getElementById('newSuppress').checked;
 
         if (!event || !sound) {
           showMsg('Event and sound are required', 'error');
           return;
         }
 
-        mappings.unshift({ event, sound, condition, value });
+        mappings.unshift({ event, sound, condition, value, suppress });
         render();
 
         const items = document.querySelectorAll('.mapping-item');
@@ -1101,6 +1122,7 @@
         document.getElementById('newSound').value = '';
         document.getElementById('newCondition').value = '===';
         document.getElementById('newValue').value = '';
+        document.getElementById('newSuppress').checked = false;
         updateValueField();
       }
 
