@@ -154,7 +154,7 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
         }
         break;
       }
-      case '% === 0': {
+      case '%': {
         if (typeof event.value === 'number' && typeof obj.value === 'number') {
           if (event.value % obj.value === 0) {
             play = true;
