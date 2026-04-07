@@ -2,10 +2,10 @@ import { readdir } from 'fs/promises';
 
 import { Hono } from 'hono';
 
-import type { GameEvent, GameEventContext, MappingEntry, Settings } from './types.js';
-import { connections } from './discord.js';
 import { logEvent, logRawRequest } from './clickhouse.js';
+import { connections } from './discord.js';
 import { logger } from './logger.js';
+import type { GameEvent, GameEventContext, MappingEntry, Settings } from './types.js';
 
 const SOUNDS_DIR = 'sounds/';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -13,9 +13,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 async function getSoundFiles(): Promise<string[]> {
   try {
     const entries = await readdir(SOUNDS_DIR);
-    return entries
-      .filter(f => f.endsWith('.mp3') && !f.startsWith('.'))
-      .toSorted();
+    return entries.filter((f) => f.endsWith('.mp3') && !f.startsWith('.')).toSorted();
   } catch {
     return [];
   }
@@ -82,29 +80,31 @@ const suppressedEvents = new Set<string>();
 
 const isSuppressedEvent = (a: GameEvent, b: GameEvent): Boolean => {
   // this will only compare event name and part of the context
-  return a.name === b.name &&
+  return (
+    a.name === b.name &&
     a.context.accountID === b.context.accountID &&
     a.context.matchID === b.context.matchID &&
-    a.context.gameTime === b.context.gameTime;
-}
+    a.context.gameTime === b.context.gameTime
+  );
+};
 
 const shouldSuppression = (e: GameEvent): Boolean => {
   // checks all of the suppressEvents for a match
   for (const [idx, s] of suppressEvents.entries()) {
     if (isSuppressedEvent(e, s)) {
       // drop this element from the array stop looping
-      suppressEvents.splice(idx, 1)
-      return true
+      suppressEvents.splice(idx, 1);
+      return true;
     }
   }
-  return false
-}
+  return false;
+};
 
 const handleGameEvent = async (event: GameEvent): Promise<void> => {
   // check if this event should be suppressed
   if (shouldSuppression(event)) {
-    logger.info({ event }, 'suppressing event')
-    return
+    logger.info({ event }, 'suppressing event');
+    return;
   }
 
   logger.debug({ event }, 'handling event');
@@ -118,7 +118,6 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
     // lazy - cleanup any leftovers in suppressEvents at match end
     suppressEvents = [];
   }
-
 
   for (const obj of mapping) {
     if (obj.event !== event.name) {
@@ -155,11 +154,19 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
         }
         break;
       }
+      case '% === 0': {
+        if (typeof event.value === 'number' && typeof obj.value === 'number') {
+          if (event.value % obj.value === 0) {
+            play = true;
+          }
+        }
+        break;
+      }
     }
     if (play) {
       if (obj.suppress) {
         if (suppressedEvents.has(event.name)) {
-          logger.info({ event, obj }, 'supressing event')
+          logger.info({ event, obj }, 'supressing event');
           continue;
         }
         suppressedEvents.add(event.name);
@@ -172,8 +179,8 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
         suppressEvents.push({
           name: 'player.kills',
           value: 0, //value is required for the GameEvent type at the moment but not checked in the suppression logic
-          context: event.context
-        })
+          context: event.context,
+        });
       }
       logger.info({ event, obj }, 'triggered mapping');
       for (const conn of Object.values(connections)) {

@@ -3,7 +3,7 @@ import type { Client, Collection, ChatInputCommandInteraction } from 'discord.js
 export interface MappingEntry {
   event: string;
   sound: string;
-  condition: '*' | '>' | '<' | '===' | '!==';
+  condition: '*' | '>' | '<' | '===' | '!==' | '% === 0';
   value: number | string;
   suppress?: boolean;
 }
