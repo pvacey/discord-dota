@@ -100,6 +100,12 @@ const shouldSuppression = (e: GameEvent): Boolean => {
   return false;
 };
 
+const playSoundForAll = (sound: string): void => {
+  for (const conn of Object.values(connections)) {
+    conn.playSound(sound);
+  }
+};
+
 const handleGameEvent = async (event: GameEvent): Promise<void> => {
   // check if this event should be suppressed
   if (shouldSuppression(event)) {
@@ -183,9 +189,7 @@ const handleGameEvent = async (event: GameEvent): Promise<void> => {
         });
       }
       logger.info({ event, obj }, 'triggered mapping');
-      for (const conn of Object.values(connections)) {
-        conn.playSound(obj.sound);
-      }
+      playSoundForAll(obj.sound);
       break;
     }
   }
@@ -236,6 +240,16 @@ app.get('/api/sounds/:name', async (c) => {
       'Content-Disposition': `inline; filename="${name}"`,
     },
   });
+});
+
+app.post('/api/sounds/:name/play', async (c) => {
+  const name = c.req.param('name');
+  const allowed = await getSoundFiles();
+  if (!allowed.includes(name)) {
+    return c.text('Sound not found', 404);
+  }
+  playSoundForAll(name);
+  return c.json({ success: true });
 });
 
 app.post('/api/sounds', async (c) => {
