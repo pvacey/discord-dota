@@ -1,7 +1,11 @@
 import { createClient as createClickHouseClient } from '@clickhouse/client';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
+import logger from './logger.js';
+import { clickhouseRowsFlushed } from './metrics.js';
 import type { ClickHouseRow, GameEvent } from './types.js';
-import { logger } from './logger.js';
+
+const tracer = trace.getTracer('discord-dota', '1.0.0');
 
 const clickhouseClient = createClickHouseClient({
   url: process.env.CLICKHOUSE_HOST || 'http://localhost:8123',
@@ -24,16 +28,29 @@ async function flushToClickHouse(): Promise<void> {
   const dataToInsert = [...eventBuffer];
   eventBuffer = [];
 
-  try {
-    await clickhouseClient.insert({
-      table: 'dota_events',
-      values: dataToInsert,
-      format: 'JSONEachRow',
-    });
-    logger.info(`Successfully flushed ${dataToInsert.length} rows to ClickHouse.`);
-  } catch (error) {
-    logger.error({ error }, 'ClickHouse Insert Error');
-  }
+  return tracer.startActiveSpan('clickhouse.insert.events', async (span) => {
+    span.setAttribute('db.system', 'clickhouse');
+    span.setAttribute('db.operation', 'insert');
+    span.setAttribute('db.table', 'dota_events');
+    span.setAttribute('db.rows_affected', dataToInsert.length);
+
+    try {
+      await clickhouseClient.insert({
+        table: 'dota_events',
+        values: dataToInsert,
+        format: 'JSONEachRow',
+      });
+      logger.info(`Successfully flushed ${dataToInsert.length} rows to ClickHouse.`);
+      clickhouseRowsFlushed.add(dataToInsert.length, { table: 'dota_events' });
+      span.setStatus({ code: SpanStatusCode.OK });
+    } catch (error) {
+      logger.error({ error }, 'ClickHouse Insert Error');
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.recordException(error as Error);
+    } finally {
+      span.end();
+    }
+  });
 }
 
 async function flushRawRequests(): Promise<void> {
@@ -44,19 +61,30 @@ async function flushRawRequests(): Promise<void> {
   const dataToInsert = [...rawRequestBuffer];
   rawRequestBuffer = [];
 
-  try {
-    await clickhouseClient.insert({
-      table: 'raw_requests',
-      values: dataToInsert,
-      format: 'JSONEachRow',
-    });
-    logger.info(`Flushed ${dataToInsert.length} raw requests to ClickHouse.`);
-  } catch (error) {
-    console.log(error);
-    logger.error({ error }, 'ClickHouse raw_requests insert error');
-  }
-}
+  return tracer.startActiveSpan('clickhouse.insert.raw_requests', async (span) => {
+    span.setAttribute('db.system', 'clickhouse');
+    span.setAttribute('db.operation', 'insert');
+    span.setAttribute('db.table', 'raw_requests');
+    span.setAttribute('db.rows_affected', dataToInsert.length);
 
+    try {
+      await clickhouseClient.insert({
+        table: 'raw_requests',
+        values: dataToInsert,
+        format: 'JSONEachRow',
+      });
+      logger.info(`Flushed ${dataToInsert.length} raw requests to ClickHouse.`);
+      clickhouseRowsFlushed.add(dataToInsert.length, { table: 'raw_requests' });
+      span.setStatus({ code: SpanStatusCode.OK });
+    } catch (error) {
+      logger.error({ error }, 'ClickHouse raw_requests insert error');
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.recordException(error as Error);
+    } finally {
+      span.end();
+    }
+  });
+}
 
 export async function logEvent(e: GameEvent): Promise<void> {
   eventBuffer.push({
@@ -108,7 +136,11 @@ export async function logRawRequest(payload: { previously?: Record<string, unkno
 function getDeepKeys(obj: unknown, prefix = ''): string[] {
   return Object.keys(obj as object).reduce((res: string[], el) => {
     const name = prefix ? `${prefix}.${el}` : el;
-    if (typeof (obj as Record<string, unknown>)[el] === 'object' && (obj as Record<string, unknown>)[el] !== null && !Array.isArray((obj as Record<string, unknown>)[el])) {
+    if (
+      typeof (obj as Record<string, unknown>)[el] === 'object' &&
+      (obj as Record<string, unknown>)[el] !== null &&
+      !Array.isArray((obj as Record<string, unknown>)[el])
+    ) {
       res.push(name);
       res.push(...getDeepKeys((obj as Record<string, unknown>)[el], name));
     } else {
