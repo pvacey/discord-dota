@@ -10,6 +10,7 @@ import {
   type PlayerSubscription,
   type VoiceConnection as DiscordVoiceConnection,
 } from '@discordjs/voice';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import {
   Client,
   Collection,
@@ -19,11 +20,12 @@ import {
   type Guild,
   type VoiceBasedChannel,
 } from 'discord.js';
-import pino from 'pino';
 
+import logger from './logger.js';
+import { discordCommandsTotal, discordVoiceConnections } from './metrics.js';
 import type { BotClient, Command } from './types.js';
-import { logger } from './logger.js';
-import { lookup } from 'node:dns';
+
+const tracer = trace.getTracer('discord-dota', '1.0.0');
 
 export const connections: Record<string, VoiceConnection> = {};
 
@@ -33,7 +35,7 @@ export class VoiceConnection {
   player: AudioPlayer;
   guild: Guild;
   channel: VoiceBasedChannel;
-  connection: DiscordVoiceConnection;
+  connection!: DiscordVoiceConnection;
   subscription: PlayerSubscription | undefined;
 
   constructor(guildId: string, channelId: string, client: BotClient) {
@@ -41,30 +43,51 @@ export class VoiceConnection {
     this.guild = client.guilds.cache.get(guildId)!;
     this.channel = this.guild.channels.cache.get(channelId) as VoiceBasedChannel;
 
-    this.connection = joinVoiceChannel({
-      channelId: channelId,
-      guildId: guildId,
-      adapterCreator: this.guild.voiceAdapterCreator,
-      selfDeaf: true,
-      selfMute: false,
-    });
+    tracer.startActiveSpan('discord.voice.connect', (span) => {
+      span.setAttribute('guild.id', guildId);
+      span.setAttribute('guild.name', this.guild.name);
+      span.setAttribute('channel.id', channelId);
+      span.setAttribute('channel.name', this.channel.name);
 
-    this.connection.on(VoiceConnectionStatus.Ready, () => {
-      logger.info(`voice connection opened @${this.guild.name} -> ${this.channel.name}`);
-    });
+      this.connection = joinVoiceChannel({
+        channelId: channelId,
+        guildId: guildId,
+        adapterCreator: this.guild.voiceAdapterCreator,
+        selfDeaf: true,
+        selfMute: false,
+      });
 
-    this.connection.on(VoiceConnectionStatus.Disconnected, () => {
-      logger.info(`voice connection closed @${this.guild.name} -> ${this.channel.name}`);
+      this.connection.on(VoiceConnectionStatus.Ready, () => {
+        logger.info(`voice connection opened @${this.guild.name} -> ${this.channel.name}`);
+        span.addEvent('voice.connected');
+        discordVoiceConnections.add(1);
+      });
+
+      this.connection.on(VoiceConnectionStatus.Disconnected, () => {
+        logger.info(`voice connection closed @${this.guild.name} -> ${this.channel.name}`);
+        span.addEvent('voice.disconnected');
+        discordVoiceConnections.add(-1);
+      });
+
+      span.end();
     });
   }
 
   playSound(fileName: string): void {
-    logger.info(`playing sound ${fileName} @${this.guild.name} -> ${this.channel.name}`);
-    if (!this.subscription) {
-      this.subscription = this.connection.subscribe(this.player);
-    }
-    const resource = createAudioResource(SOUNDS_DIR + fileName);
-    this.player.play(resource);
+    tracer.startActiveSpan('discord.voice.play', (span) => {
+      span.setAttribute('sound.file', fileName);
+      span.setAttribute('guild.name', this.guild.name);
+      span.setAttribute('channel.name', this.channel.name);
+
+      logger.info(`playing sound ${fileName} @${this.guild.name} -> ${this.channel.name}`);
+      if (!this.subscription) {
+        this.subscription = this.connection.subscribe(this.player);
+      }
+      const resource = createAudioResource(SOUNDS_DIR + fileName);
+      this.player.play(resource);
+
+      span.end();
+    });
   }
 }
 
@@ -107,20 +130,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
     return;
   }
 
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    logger.error(error);
-    await (interaction.replied || interaction.deferred
-      ? interaction.followUp({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      })
-      : interaction.reply({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      }));
-  }
+  discordCommandsTotal.add(1, { command: interaction.commandName });
+
+  tracer.startActiveSpan(`discord.command.${interaction.commandName}`, async (span) => {
+    span.setAttribute('command.name', interaction.commandName);
+    span.setAttribute('guild.id', interaction.guildId ?? 'dm');
+    span.setAttribute('user.id', interaction.user.id);
+    span.setAttribute('user.tag', interaction.user.tag);
+
+    try {
+      await command.execute(interaction);
+      span.setStatus({ code: SpanStatusCode.OK });
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.recordException(error as Error);
+      logger.error(error);
+      await (interaction.replied || interaction.deferred
+        ? interaction.followUp({
+            content: 'There was an error while executing this command!',
+            flags: MessageFlags.Ephemeral,
+          })
+        : interaction.reply({
+            content: 'There was an error while executing this command!',
+            flags: MessageFlags.Ephemeral,
+          }));
+    } finally {
+      span.end();
+    }
+  });
 });
 
 client.once(Events.ClientReady, () => {

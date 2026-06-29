@@ -1,11 +1,15 @@
 import { readdir } from 'fs/promises';
 
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import { Hono } from 'hono';
 
 import { logEvent, logRawRequest } from './clickhouse.js';
 import { connections } from './discord.js';
-import { logger } from './logger.js';
+import logger from './logger.js';
+import { httpRequestsTotal, httpRequestDuration, gameEventsTotal, soundsPlayedTotal } from './metrics.js';
 import type { GameEvent, GameEventContext, MappingEntry, Settings } from './types.js';
+
+const tracer = trace.getTracer('discord-dota', '1.0.0');
 
 const SOUNDS_DIR = 'sounds/';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -78,17 +82,14 @@ const gameSummary = async (matchID: number): Promise<void> => {
 let suppressEvents: GameEvent[] = [];
 const suppressedEvents = new Set<string>();
 
-const isSuppressedEvent = (a: GameEvent, b: GameEvent): Boolean => {
-  // this will only compare event name and part of the context
-  return (
-    a.name === b.name &&
-    a.context.accountID === b.context.accountID &&
-    a.context.matchID === b.context.matchID &&
-    a.context.gameTime === b.context.gameTime
-  );
-};
+// this will only compare event name and part of the context
+const isSuppressedEvent = (a: GameEvent, b: GameEvent): boolean =>
+  a.name === b.name &&
+  a.context.accountID === b.context.accountID &&
+  a.context.matchID === b.context.matchID &&
+  a.context.gameTime === b.context.gameTime;
 
-const shouldSuppression = (e: GameEvent): Boolean => {
+const shouldSuppression = (e: GameEvent): boolean => {
   // checks all of the suppressEvents for a match
   for (const [idx, s] of suppressEvents.entries()) {
     if (isSuppressedEvent(e, s)) {
@@ -103,101 +104,120 @@ const shouldSuppression = (e: GameEvent): Boolean => {
 const playSoundForAll = (sound: string): void => {
   for (const conn of Object.values(connections)) {
     conn.playSound(sound);
+    soundsPlayedTotal.add(1, { sound });
   }
 };
 
-const handleGameEvent = async (event: GameEvent): Promise<void> => {
-  // check if this event should be suppressed
-  if (shouldSuppression(event)) {
-    logger.info({ event }, 'suppressing event');
-    return;
-  }
+const handleGameEvent = async (event: GameEvent): Promise<void> =>
+  tracer.startActiveSpan('game.event.handle', async (span) => {
+    span.setAttribute('event.name', event.name);
+    span.setAttribute('event.value', String(event.value));
+    span.setAttribute('event.context.account_id', event.context.accountID);
+    span.setAttribute('event.context.match_id', event.context.matchID);
 
-  logger.debug({ event }, 'handling event');
+    gameEventsTotal.add(1, { event: event.name });
 
-  if (!(event.name === 'map.game_time' || event.name === 'map.clock_time') && typeof event.value === 'number') {
-    logEvent(event);
-  }
+    try {
+      // check if this event should be suppressed
+      if (shouldSuppression(event)) {
+        logger.info({ event }, 'suppressing event');
+        span.addEvent('event.suppressed');
+        return;
+      }
 
-  if (event.name === 'map.game_state' && event.value === 'DOTA_GAMERULES_STATE_POST_GAME' && !suppressReport) {
-    gameSummary(event.context.matchID);
-    // lazy - cleanup any leftovers in suppressEvents at match end
-    suppressEvents = [];
-  }
+      logger.debug({ event }, 'handling event');
 
-  for (const obj of mapping) {
-    if (obj.event !== event.name) {
-      continue;
-    }
+      if (!(event.name === 'map.game_time' || event.name === 'map.clock_time') && typeof event.value === 'number') {
+        logEvent(event);
+      }
 
-    let play = false;
-    switch (obj.condition) {
-      case '*': {
-        play = true;
-        break;
+      if (event.name === 'map.game_state' && event.value === 'DOTA_GAMERULES_STATE_POST_GAME' && !suppressReport) {
+        gameSummary(event.context.matchID);
+        // lazy - cleanup any leftovers in suppressEvents at match end
+        suppressEvents = [];
       }
-      case '>': {
-        if (event.value > obj.value) {
-          play = true;
-        }
-        break;
-      }
-      case '<': {
-        if (event.value < obj.value) {
-          play = true;
-        }
-        break;
-      }
-      case '===': {
-        if (event.value === obj.value) {
-          play = true;
-        }
-        break;
-      }
-      case '!==': {
-        if (event.value !== obj.value) {
-          play = true;
-        }
-        break;
-      }
-      case '%': {
-        if (typeof event.value === 'number' && typeof obj.value === 'number') {
-          if (event.value % obj.value === 0) {
-            play = true;
-          }
-        }
-        break;
-      }
-    }
-    if (play) {
-      if (obj.suppress) {
-        if (suppressedEvents.has(event.name)) {
-          logger.info({ event, obj }, 'supressing event');
+
+      for (const obj of mapping) {
+        if (obj.event !== event.name) {
           continue;
         }
-        suppressedEvents.add(event.name);
-        setTimeout(() => suppressedEvents.delete(event.name), 5000);
+
+        let play = false;
+        switch (obj.condition) {
+          case '*': {
+            play = true;
+            break;
+          }
+          case '>': {
+            if (event.value > obj.value) {
+              play = true;
+            }
+            break;
+          }
+          case '<': {
+            if (event.value < obj.value) {
+              play = true;
+            }
+            break;
+          }
+          case '===': {
+            if (event.value === obj.value) {
+              play = true;
+            }
+            break;
+          }
+          case '!==': {
+            if (event.value !== obj.value) {
+              play = true;
+            }
+            break;
+          }
+          case '%': {
+            if (typeof event.value === 'number' && typeof obj.value === 'number') {
+              if (event.value % obj.value === 0) {
+                play = true;
+              }
+            }
+            break;
+          }
+        }
+        if (play) {
+          if (obj.suppress) {
+            if (suppressedEvents.has(event.name)) {
+              logger.info({ event, obj }, 'supressing event');
+              continue;
+            }
+            suppressedEvents.add(event.name);
+            setTimeout(() => suppressedEvents.delete(event.name), 5000);
+          }
+          // player.kills and player.kill_streak will always be seen together in the same payload
+          // if you get an event for player.kill_streak, suppress the player.kills with the matching context
+          // be careful reusing this pattern for other events there is nothing purging stale events in the suppressEvents array
+          if (event.name === 'player.kill_streak') {
+            suppressEvents.push({
+              name: 'player.kills',
+              value: 0, //value is required for the GameEvent type at the moment but not checked in the suppression logic
+              context: event.context,
+            });
+          }
+          logger.info({ event, obj }, 'triggered mapping');
+          span.addEvent('sound.triggered', { sound: obj.sound });
+          playSoundForAll(obj.sound);
+          break;
+        }
       }
-      // player.kills and player.kill_streak will always be seen together in the same payload
-      // if you get an event for player.kill_streak, suppress the player.kills with the matching context
-      // be careful reusing this pattern for other events there is nothing purging stale events in the suppressEvents array
-      if (event.name === 'player.kill_streak') {
-        suppressEvents.push({
-          name: 'player.kills',
-          value: 0, //value is required for the GameEvent type at the moment but not checked in the suppression logic
-          context: event.context,
-        });
-      }
-      logger.info({ event, obj }, 'triggered mapping');
-      playSoundForAll(obj.sound);
-      break;
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.recordException(error as Error);
+      throw error;
+    } finally {
+      span.end();
     }
-  }
-};
+  });
 
 const configFile = 'mapping.json';
 const config = Bun.file(configFile);
-let mapping: MappingEntry[];
+let mapping: MappingEntry[] = [];
 
 if (await config.exists()) {
   mapping = await config.json();
@@ -208,6 +228,34 @@ if (await config.exists()) {
 let suppressReport = false;
 
 export const app = new Hono();
+
+app.use('*', async (c, next) => {
+  const start = performance.now();
+  const { method, path: route } = c.req;
+
+  httpRequestsTotal.add(1, { method, route });
+
+  return tracer.startActiveSpan(`${method} ${route}`, async (span) => {
+    span.setAttribute('http.method', method);
+    span.setAttribute('http.route', route);
+
+    try {
+      await next();
+      span.setAttribute('http.status_code', c.res.status);
+      if (c.res.status >= 400) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${c.res.status}` });
+      }
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
+      span.recordException(error as Error);
+      throw error;
+    } finally {
+      const duration = performance.now() - start;
+      httpRequestDuration.record(duration, { method, route, status: String(c.res.status) });
+      span.end();
+    }
+  });
+});
 
 app.get('/api/mappings', async (c) => {
   const f = Bun.file('mapping.json');
