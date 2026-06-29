@@ -25,8 +25,13 @@ async function flushToClickHouse(): Promise<void> {
     return;
   }
 
-  const dataToInsert = [...eventBuffer];
-  eventBuffer = [];
+  const dataToInsert = tracer.startActiveSpan('clickhouse.event.buffer.snapshot', (snapshotSpan) => {
+    const snapshot = [...eventBuffer];
+    eventBuffer = [];
+    snapshotSpan.setAttribute('buffer.snapshot_size', snapshot.length);
+    snapshotSpan.end();
+    return snapshot;
+  });
 
   return tracer.startActiveSpan('clickhouse.insert.events', async (span) => {
     span.setAttribute('db.system', 'clickhouse');
@@ -35,10 +40,24 @@ async function flushToClickHouse(): Promise<void> {
     span.setAttribute('db.rows_affected', dataToInsert.length);
 
     try {
-      await clickhouseClient.insert({
-        table: 'dota_events',
-        values: dataToInsert,
-        format: 'JSONEachRow',
+      await tracer.startActiveSpan('clickhouse.event.insert', async (insertSpan) => {
+        insertSpan.setAttribute('db.system', 'clickhouse');
+        insertSpan.setAttribute('db.table', 'dota_events');
+        insertSpan.setAttribute('db.rows_affected', dataToInsert.length);
+        try {
+          await clickhouseClient.insert({
+            table: 'dota_events',
+            values: dataToInsert,
+            format: 'JSONEachRow',
+          });
+          insertSpan.setStatus({ code: SpanStatusCode.OK });
+        } catch (error) {
+          insertSpan.setStatus({ code: SpanStatusCode.ERROR });
+          insertSpan.recordException(error as Error);
+          throw error;
+        } finally {
+          insertSpan.end();
+        }
       });
       logger.info(`Successfully flushed ${dataToInsert.length} rows to ClickHouse.`);
       clickhouseRowsFlushed.add(dataToInsert.length, { table: 'dota_events' });
@@ -58,8 +77,13 @@ async function flushRawRequests(): Promise<void> {
     return;
   }
 
-  const dataToInsert = [...rawRequestBuffer];
-  rawRequestBuffer = [];
+  const dataToInsert = tracer.startActiveSpan('clickhouse.raw_request.buffer.snapshot', (snapshotSpan) => {
+    const snapshot = [...rawRequestBuffer];
+    rawRequestBuffer = [];
+    snapshotSpan.setAttribute('buffer.snapshot_size', snapshot.length);
+    snapshotSpan.end();
+    return snapshot;
+  });
 
   return tracer.startActiveSpan('clickhouse.insert.raw_requests', async (span) => {
     span.setAttribute('db.system', 'clickhouse');
@@ -68,10 +92,24 @@ async function flushRawRequests(): Promise<void> {
     span.setAttribute('db.rows_affected', dataToInsert.length);
 
     try {
-      await clickhouseClient.insert({
-        table: 'raw_requests',
-        values: dataToInsert,
-        format: 'JSONEachRow',
+      await tracer.startActiveSpan('clickhouse.raw_request.insert', async (insertSpan) => {
+        insertSpan.setAttribute('db.system', 'clickhouse');
+        insertSpan.setAttribute('db.table', 'raw_requests');
+        insertSpan.setAttribute('db.rows_affected', dataToInsert.length);
+        try {
+          await clickhouseClient.insert({
+            table: 'raw_requests',
+            values: dataToInsert,
+            format: 'JSONEachRow',
+          });
+          insertSpan.setStatus({ code: SpanStatusCode.OK });
+        } catch (error) {
+          insertSpan.setStatus({ code: SpanStatusCode.ERROR });
+          insertSpan.recordException(error as Error);
+          throw error;
+        } finally {
+          insertSpan.end();
+        }
       });
       logger.info(`Flushed ${dataToInsert.length} raw requests to ClickHouse.`);
       clickhouseRowsFlushed.add(dataToInsert.length, { table: 'raw_requests' });
@@ -87,50 +125,81 @@ async function flushRawRequests(): Promise<void> {
 }
 
 export async function logEvent(e: GameEvent): Promise<void> {
-  eventBuffer.push({
-    account_id: e.context.accountID,
-    match_id: e.context.matchID,
-    timestamp: e.context.timestamp,
-    game_time: e.context.gameTime,
-    event_key: e.name,
-    event_value: e.value as number,
-  });
+  return tracer.startActiveSpan('clickhouse.event.buffer', async (span) => {
+    span.setAttribute('event.name', e.name);
+    span.setAttribute('event.key', e.context.accountID);
+    try {
+      eventBuffer.push({
+        account_id: e.context.accountID,
+        match_id: e.context.matchID,
+        timestamp: e.context.timestamp,
+        game_time: e.context.gameTime,
+        event_key: e.name,
+        event_value: e.value as number,
+      });
+      span.setAttribute('buffer.size', eventBuffer.length);
 
-  if (eventBuffer.length >= BATCH_SIZE_THRESHOLD) {
-    await flushToClickHouse();
-  }
+      if (eventBuffer.length >= BATCH_SIZE_THRESHOLD) {
+        span.setAttribute('buffer.flush_triggered', true);
+        await flushToClickHouse();
+      } else {
+        span.setAttribute('buffer.flush_triggered', false);
+      }
+    } finally {
+      span.end();
+    }
+  });
 }
 
 export async function logRawRequest(payload: { previously?: Record<string, unknown> }): Promise<void> {
-  const requestKeys = new Set(getDeepKeys(payload.previously));
-  const ignoreSet = new Set([
-    'map',
-    'map.game_time',
-    'map.clock_time',
-    'player',
-    'player.gold',
-    'player.gold_reliable',
-    'player.gold_unreliable',
-    'player.gold_from_income',
-    'player.gpm',
-    'player.xpm',
-    'hero',
-    'hero.health',
-    'hero.mana',
-    'hero.mana_percent',
-    'items',
-    'items.teleport0',
-    'items.teleport0.cooldown',
-  ]);
-  if (requestKeys.difference(ignoreSet).size === 0) {
-    return;
-  }
+  return tracer.startActiveSpan('clickhouse.raw_request.buffer', async (span) => {
+    try {
+      const requestKeys = tracer.startActiveSpan('clickhouse.raw_request.keys', (keysSpan) => {
+        const keys = new Set(getDeepKeys(payload.previously));
+        keysSpan.setAttribute('keys.count', keys.size);
+        keysSpan.end();
+        return keys;
+      });
 
-  rawRequestBuffer.push({ timestamp: Date.now(), payload });
+      const ignoreSet = new Set([
+        'map',
+        'map.game_time',
+        'map.clock_time',
+        'player',
+        'player.gold',
+        'player.gold_reliable',
+        'player.gold_unreliable',
+        'player.gold_from_income',
+        'player.gpm',
+        'player.xpm',
+        'hero',
+        'hero.health',
+        'hero.mana',
+        'hero.mana_percent',
+        'items',
+        'items.teleport0',
+        'items.teleport0.cooldown',
+      ]);
+      if (requestKeys.difference(ignoreSet).size === 0) {
+        span.setAttribute('request.filtered', true);
+        return;
+      }
+      span.setAttribute('request.filtered', false);
+      span.setAttribute('request.keys_count', requestKeys.size);
 
-  if (rawRequestBuffer.length >= BATCH_SIZE_THRESHOLD) {
-    await flushRawRequests();
-  }
+      rawRequestBuffer.push({ timestamp: Date.now(), payload });
+      span.setAttribute('buffer.size', rawRequestBuffer.length);
+
+      if (rawRequestBuffer.length >= BATCH_SIZE_THRESHOLD) {
+        span.setAttribute('buffer.flush_triggered', true);
+        await flushRawRequests();
+      } else {
+        span.setAttribute('buffer.flush_triggered', false);
+      }
+    } finally {
+      span.end();
+    }
+  });
 }
 
 function getDeepKeys(obj: unknown, prefix = ''): string[] {
@@ -151,7 +220,13 @@ function getDeepKeys(obj: unknown, prefix = ''): string[] {
 }
 
 export function startClickHouse(): void {
-  logger.info('ClickHouse client initialized');
-  setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
-  setInterval(flushRawRequests, FLUSH_INTERVAL_MS);
+  tracer.startActiveSpan('clickhouse.init', (span) => {
+    span.setAttribute('db.system', 'clickhouse');
+    span.setAttribute('clickhouse.batch_size', BATCH_SIZE_THRESHOLD);
+    span.setAttribute('clickhouse.flush_interval_ms', FLUSH_INTERVAL_MS);
+    logger.info('ClickHouse client initialized');
+    setInterval(flushToClickHouse, FLUSH_INTERVAL_MS);
+    setInterval(flushRawRequests, FLUSH_INTERVAL_MS);
+    span.end();
+  });
 }

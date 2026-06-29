@@ -61,15 +61,20 @@ export class VoiceConnection {
         logger.info(`voice connection opened @${this.guild.name} -> ${this.channel.name}`);
         span.addEvent('voice.connected');
         discordVoiceConnections.add(1);
+        span.end();
       });
 
       this.connection.on(VoiceConnectionStatus.Disconnected, () => {
         logger.info(`voice connection closed @${this.guild.name} -> ${this.channel.name}`);
-        span.addEvent('voice.disconnected');
-        discordVoiceConnections.add(-1);
+        tracer.startActiveSpan('discord.voice.disconnect', (disconnectSpan) => {
+          disconnectSpan.setAttribute('guild.id', guildId);
+          disconnectSpan.setAttribute('guild.name', this.guild.name);
+          disconnectSpan.setAttribute('channel.id', channelId);
+          disconnectSpan.setAttribute('channel.name', this.channel.name);
+          discordVoiceConnections.add(-1);
+          disconnectSpan.end();
+        });
       });
-
-      span.end();
     });
   }
 
@@ -79,14 +84,46 @@ export class VoiceConnection {
       span.setAttribute('guild.name', this.guild.name);
       span.setAttribute('channel.name', this.channel.name);
 
-      logger.info(`playing sound ${fileName} @${this.guild.name} -> ${this.channel.name}`);
-      if (!this.subscription) {
-        this.subscription = this.connection.subscribe(this.player);
-      }
-      const resource = createAudioResource(SOUNDS_DIR + fileName);
-      this.player.play(resource);
+      try {
+        logger.info(`playing sound ${fileName} @${this.guild.name} -> ${this.channel.name}`);
+        if (!this.subscription) {
+          tracer.startActiveSpan('discord.voice.subscribe', (subscribeSpan) => {
+            subscribeSpan.setAttribute('guild.name', this.guild.name);
+            try {
+              this.subscription = this.connection.subscribe(this.player);
+            } catch (error) {
+              subscribeSpan.setStatus({ code: SpanStatusCode.ERROR });
+              subscribeSpan.recordException(error as Error);
+              throw error;
+            } finally {
+              subscribeSpan.end();
+            }
+          });
+        }
 
-      span.end();
+        const resource = tracer.startActiveSpan('discord.voice.resource.create', (resourceSpan) => {
+          resourceSpan.setAttribute('sound.file', fileName);
+          resourceSpan.setAttribute('resource.path', SOUNDS_DIR + fileName);
+          try {
+            const res = createAudioResource(SOUNDS_DIR + fileName);
+            return res;
+          } catch (error) {
+            resourceSpan.setStatus({ code: SpanStatusCode.ERROR });
+            resourceSpan.recordException(error as Error);
+            throw error;
+          } finally {
+            resourceSpan.end();
+          }
+        });
+
+        this.player.play(resource);
+      } catch (error) {
+        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.recordException(error as Error);
+        throw error;
+      } finally {
+        span.end();
+      }
     });
   }
 }
@@ -102,22 +139,36 @@ export const client = new Client({
 
 client.commands = new Collection();
 
-const foldersPath = path.join(import.meta.dir, '..', 'commands');
-const commandFolders = fs.readdirSync(foldersPath);
+tracer.startActiveSpan('discord.commands.load', async (span) => {
+  const loadedCommands: string[] = [];
+  try {
+    const foldersPath = path.join(import.meta.dir, '..', 'commands');
+    const commandFolders = fs.readdirSync(foldersPath);
 
-for (const folder of commandFolders) {
-  const commandsPath = path.join(foldersPath, folder);
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts'));
-  for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = (await import(filePath)) as Command;
-    if ('data' in command && 'execute' in command) {
-      client.commands.set(command.data.name, command);
-    } else {
-      logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
+    for (const folder of commandFolders) {
+      const commandsPath = path.join(foldersPath, folder);
+      const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.ts'));
+      for (const file of commandFiles) {
+        const filePath = path.join(commandsPath, file);
+        const command = (await import(filePath)) as Command;
+        if ('data' in command && 'execute' in command) {
+          client.commands.set(command.data.name, command);
+          loadedCommands.push(command.data.name);
+        } else {
+          logger.warn(`The command at ${filePath} is missing a required "data" or "execute" property.`);
+        }
+      }
     }
+    span.setAttribute('commands.count', loadedCommands.length);
+    span.setAttribute('commands.names', loadedCommands.join(','));
+  } catch (error) {
+    span.setStatus({ code: SpanStatusCode.ERROR });
+    span.recordException(error as Error);
+    throw error;
+  } finally {
+    span.end();
   }
-}
+});
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) {
@@ -161,25 +212,66 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.once(Events.ClientReady, () => {
-  logger.info(`bot logged in as ${client.user?.tag}`);
+  tracer.startActiveSpan('discord.ready', (span) => {
+    span.setAttribute('user.tag', client.user?.tag ?? 'unknown');
+    span.setAttribute('user.id', client.user?.id ?? 'unknown');
+    logger.info(`bot logged in as ${client.user?.tag}`);
+    span.end();
+  });
 });
 
 client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   if (!oldState.channelId && newState.channelId && newState.member?.user.id !== client.user?.id) {
-    logger.info(`${newState.member?.user.tag} joined ${newState.channel?.name}`);
+    const joinChannelId = newState.channelId;
+    tracer.startActiveSpan('discord.voice_state.join', (span) => {
+      span.setAttribute('user.id', newState.member?.user.id ?? 'unknown');
+      span.setAttribute('user.tag', newState.member?.user.tag ?? 'unknown');
+      span.setAttribute('channel.id', joinChannelId);
+      span.setAttribute('channel.name', newState.channel?.name ?? 'unknown');
+      span.setAttribute('guild.id', newState.guild.id);
+      try {
+        logger.info(`${newState.member?.user.tag} joined ${newState.channel?.name}`);
 
-    if (!connections[newState.channelId]) {
-      connections[newState.channelId] = new VoiceConnection(newState.guild.id, newState.channelId, client);
-    }
-    connections[newState.channelId]!.playSound('open-aim.mp3');
+        if (!connections[joinChannelId]) {
+          connections[joinChannelId] = new VoiceConnection(newState.guild.id, joinChannelId, client);
+        }
+        connections[joinChannelId]!.playSound('open-aim.mp3');
+      } finally {
+        span.end();
+      }
+    });
   }
 
   if (oldState.channelId && !newState.channelId) {
-    logger.info(`${oldState.member?.user.tag} left ${oldState.channel?.name}`);
-    if (oldState.channel?.members.size === 1 && connections[oldState.channelId]) {
-      connections[oldState.channelId]!.connection.destroy();
-      delete connections[oldState.channelId];
-    }
+    const leaveChannelId = oldState.channelId;
+    tracer.startActiveSpan('discord.voice_state.leave', (span) => {
+      span.setAttribute('user.id', oldState.member?.user.id ?? 'unknown');
+      span.setAttribute('user.tag', oldState.member?.user.tag ?? 'unknown');
+      span.setAttribute('channel.id', leaveChannelId);
+      span.setAttribute('channel.name', oldState.channel?.name ?? 'unknown');
+      span.setAttribute('guild.id', oldState.guild.id);
+      try {
+        logger.info(`${oldState.member?.user.tag} left ${oldState.channel?.name}`);
+        if (oldState.channel?.members.size === 1 && connections[leaveChannelId]) {
+          tracer.startActiveSpan('discord.voice.destroy', (destroySpan) => {
+            destroySpan.setAttribute('channel.id', leaveChannelId);
+            destroySpan.setAttribute('guild.id', oldState.guild.id);
+            try {
+              connections[leaveChannelId]!.connection.destroy();
+              delete connections[leaveChannelId];
+            } catch (error) {
+              destroySpan.setStatus({ code: SpanStatusCode.ERROR });
+              destroySpan.recordException(error as Error);
+              throw error;
+            } finally {
+              destroySpan.end();
+            }
+          });
+        }
+      } finally {
+        span.end();
+      }
+    });
   }
 });
 
