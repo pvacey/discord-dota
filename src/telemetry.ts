@@ -8,7 +8,11 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { SimpleLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
+  ATTR_SERVICE_NAME,
+  ATTR_SERVICE_VERSION,
+} from '@opentelemetry/semantic-conventions';
 
 const OTEL_LOG_LEVEL = process.env.OTEL_LOG_LEVEL?.toLowerCase();
 
@@ -34,9 +38,24 @@ switch (OTEL_LOG_LEVEL) {
   }
 }
 
+function resolveDeploymentEnvironment(): string {
+  switch (process.env.NODE_ENV) {
+    case 'production': {
+      return 'production';
+    }
+    case 'test': {
+      return 'staging';
+    }
+    default: {
+      return 'development';
+    }
+  }
+}
+
 const resource = resourceFromAttributes({
   [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'discord-dota',
   [ATTR_SERVICE_VERSION]: '1.0.0',
+  [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: resolveDeploymentEnvironment(),
 });
 
 const traceExporter = new OTLPTraceExporter();
