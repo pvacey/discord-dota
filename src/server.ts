@@ -7,7 +7,7 @@ import { logEvent, logRawRequest } from './clickhouse.js';
 import { connections } from './discord.js';
 import logger from './logger.js';
 import { httpRequestsTotal, httpRequestDuration, gameEventsTotal, soundsPlayedTotal } from './metrics.js';
-import type { GameEvent, GameEventContext, MappingEntry, Settings } from './types.js';
+import type { GameEvent, GameEventContext, MappingConfig, MappingEntry, Settings } from './types.js';
 
 const tracer = trace.getTracer('discord-dota', '1.0.0');
 
@@ -197,14 +197,11 @@ const handleGameEvent = async (event: GameEvent): Promise<void> =>
 
       let matchedIndex = -1;
       tracer.startActiveSpan('game.event.mapping.evaluate', (mappingSpan) => {
-        mappingSpan.setAttribute('mapping.entries_count', mapping.length);
+        mappingSpan.setAttribute('mapping.entries_count', Object.values(mapping.dota).flat().length);
         mappingSpan.setAttribute('event.name', event.name);
         try {
-          for (const [idx, obj] of mapping.entries()) {
-            if (obj.event !== event.name) {
-              continue;
-            }
-
+          const entries = mapping.dota[event.name] ?? [];
+          for (const [idx, obj] of entries.entries()) {
             let play = false;
             switch (obj.condition) {
               case '*': {
@@ -295,13 +292,13 @@ const handleGameEvent = async (event: GameEvent): Promise<void> =>
 
 const configFile = 'mapping.json';
 const config = Bun.file(configFile);
-let mapping: MappingEntry[] = [];
+let mapping: MappingConfig = { dota: {} };
 
 if (await config.exists()) {
   mapping = await config.json();
 } else {
-  await Bun.write(configFile, '[]');
-  mapping = [];
+  await Bun.write(configFile, JSON.stringify({ dota: {} }, null, 2));
+  mapping = { dota: {} };
 }
 let suppressReport = false;
 
@@ -355,10 +352,15 @@ app.get('/api/mappings', async (c) =>
 app.put('/api/mappings', async (c) =>
   tracer.startActiveSpan('api.mappings.write', async (span) => {
     try {
-      const data = (await c.req.json()) as MappingEntry[];
+      const data = (await c.req.json()) as MappingConfig;
+      const sorted = Object.keys(data.dota).toSorted().reduce((acc, key) => {
+        acc[key] = data.dota[key]!;
+        return acc;
+      }, {} as Record<string, MappingEntry[]>);
+      data.dota = sorted;
       await Bun.write('mapping.json', JSON.stringify(data, null, 2));
       mapping = data;
-      span.setAttribute('mappings.count', data.length);
+      span.setAttribute('mappings.count', Object.values(data.dota).flat().length);
       return c.json({ success: true });
     } catch (error) {
       span.setStatus({ code: SpanStatusCode.ERROR });

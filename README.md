@@ -110,24 +110,28 @@ ENABLE_DISCORD=false bun run dev
 
 ### Event-to-Sound Mappings (`mapping.json`)
 
-On first run, the app automatically creates `mapping.json` with an empty array `[]`. Edit via the Web UI at `http://localhost:3000/` or directly edit the file.
+On first run, the app automatically creates `mapping.json` with `{ "dota": {} }`. Edit via the Web UI at `http://localhost:3000/` or directly edit the file.
 
 Sample `mapping.json`:
 ```json
-[
-  {
-    "event": "player.deaths",
-    "sound": "fail.mp3",
-    "condition": ">",
-    "value": 0
-  },
-  {
-    "event": "player.kills",
-    "sound": "kill.mp3",
-    "condition": "===",
-    "value": 10
+{
+  "dota": {
+    "player.deaths": [
+      {
+        "sound": "fail.mp3",
+        "condition": ">",
+        "value": 0
+      }
+    ],
+    "player.kills": [
+      {
+        "sound": "kill.mp3",
+        "condition": "===",
+        "value": 10
+      }
+    ]
   }
-]
+}
 ```
 
 **Supported Conditions:**

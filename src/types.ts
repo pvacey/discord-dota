@@ -1,11 +1,14 @@
 import type { Client, Collection, ChatInputCommandInteraction } from 'discord.js';
 
 export interface MappingEntry {
-  event: string;
   sound: string;
   condition: '*' | '>' | '<' | '===' | '!==' | '%';
   value: number | string;
   suppress?: boolean;
+}
+
+export interface MappingConfig {
+  dota: Record<string, MappingEntry[]>;
 }
 
 export interface GameEvent {
