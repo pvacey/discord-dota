@@ -1,6 +1,7 @@
 # Use the official Bun image as the base
 FROM oven/bun:1.3.5 AS base
 WORKDIR /usr/src/app
+ENV NODE_ENV=production
 
 # --- New Step: Install ffmpeg ---
 # We do this in a separate layer to keep things organized
