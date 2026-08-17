@@ -328,6 +328,13 @@ app.delete('/api/sounds/:name', async (c) => {
   return c.json({ success: true });
 });
 
+app.get('/favicon.png', async (c) => {
+  const file = Bun.file('./public/favicon.png');
+  return c.body(file.stream(), {
+    headers: { 'Content-Type': 'image/png' },
+  });
+});
+
 app.get('/', async (c) => {
   const file = Bun.file('./public/index.html');
   return c.html(await file.text());
