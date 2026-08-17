@@ -9,6 +9,9 @@ export interface MappingEntry {
 
 export interface MappingConfig {
   dota: Record<string, MappingEntry[]>;
+  discord?: {
+    userSounds?: Record<string, string>;
+  };
 }
 
 export interface GameEvent {

@@ -161,6 +161,15 @@
         font-size: 13px;
         font-family: 'Share Tech Mono', 'Fira Code', monospace;
         transition: all 0.15s;
+        height: 38px;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a6e2f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
       }
       input[type="checkbox"] {
         width: 18px;
@@ -546,6 +555,7 @@
       <div class="tabs">
         <button class="tab active" onclick="switchTab('mappings')">Mappings</button>
         <button class="tab" onclick="switchTab('sounds')">Sounds</button>
+        <button class="tab" onclick="switchTab('user-sounds')">User Sounds</button>
       </div>
 
       <div id="tab-sounds" class="tab-content">
@@ -560,6 +570,31 @@
           <h3>Sound Files</h3>
           <div id="soundList" class="sound-list"></div>
         </div>
+      </div>
+
+      <div id="tab-user-sounds" class="tab-content">
+        <div class="card">
+          <h3>Add User Sound</h3>
+          <div style="margin-top: 20px">
+            <div class="field-group">
+              <div class="field">
+                <label>Discord User ID</label>
+                <input type="text" id="newUserId" placeholder="e.g. 123456789" />
+              </div>
+              <div class="field">
+                <label>Sound</label>
+                <select id="newUserSound">
+                  <option value="">Select a sound...</option>
+                </select>
+              </div>
+              <button class="btn-primary" onclick="addUserSound()">Add</button>
+            </div>
+          </div>
+        </div>
+        <div class="mappings-header">
+          <h3>User Sounds</h3>
+        </div>
+        <div id="userSoundsList" class="sound-list"></div>
       </div>
 
       <div id="tab-mappings" class="tab-content active">
@@ -767,6 +802,7 @@
         mappings = await res.json();
         originalMappings = JSON.parse(JSON.stringify(mappings));
         await loadSounds();
+        await loadUserSounds();
         render();
       }
 
@@ -960,6 +996,97 @@
         el.textContent = text;
         el.className = 'msg ' + type + ' show';
         setTimeout(() => (el.className = 'msg'), 3000);
+      }
+
+      let userSounds = {};
+
+      async function loadUserSounds() {
+        const res = await fetch('/api/discord/user-sounds');
+        userSounds = await res.json();
+        renderUserSoundsList();
+        renderUserSoundOptions();
+      }
+
+      function renderUserSoundOptions() {
+        const select = document.getElementById('newUserSound');
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">Select a sound...</option>' +
+          sounds.map(s => `<option value="${s}">${s}</option>`).join('');
+        if (sounds.includes(currentVal)) {
+          select.value = currentVal;
+        }
+      }
+
+      function renderUserSoundsList() {
+        const list = document.getElementById('userSoundsList');
+        const entries = Object.entries(userSounds);
+        if (entries.length === 0) {
+          list.innerHTML = '<div class="empty">No user sounds configured. All users play open-aim.mp3 by default.</div>';
+          return;
+        }
+        list.innerHTML = entries.map(([userId, sound]) => `
+          <div class="sound-item">
+            <span class="sound-name">${userId}</span>
+            <select onchange="updateUserSound('${userId}', this.value)" style="flex: 1;">
+              <option value="">Select a sound...</option>
+              ${sounds.map(s => `<option value="${s}" ${sound === s ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+            <div class="sound-actions">
+              <button class="btn-icon btn-play" onclick="playSound('/api/sounds/${encodeURIComponent(sound)}', this)" title="Play">▶</button>
+              <button class="btn-icon danger" onclick="deleteUserSound('${userId}')" title="Delete">✕</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      async function addUserSound() {
+        const userId = document.getElementById('newUserId').value.trim();
+        const sound = document.getElementById('newUserSound').value;
+        if (!userId || !sound) {
+          showMsg('User ID and sound are required', 'error');
+          return;
+        }
+        const res = await fetch('/api/discord/user-sounds/' + encodeURIComponent(userId), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sound }),
+        });
+        if (res.ok) {
+          showMsg('User sound added', 'success');
+          document.getElementById('newUserId').value = '';
+          document.getElementById('newUserSound').value = '';
+          await loadUserSounds();
+        } else {
+          showMsg('Failed to add user sound', 'error');
+        }
+      }
+
+      async function updateUserSound(userId, sound) {
+        if (!sound) return;
+        const res = await fetch('/api/discord/user-sounds/' + encodeURIComponent(userId), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sound }),
+        });
+        if (res.ok) {
+          showMsg('User sound updated', 'success');
+          await loadUserSounds();
+        } else {
+          showMsg('Failed to update user sound', 'error');
+        }
+      }
+
+      async function deleteUserSound(userId) {
+        if (!confirm(`Remove custom sound for user ${userId}?`)) return;
+        const res = await fetch('/api/discord/user-sounds/' + encodeURIComponent(userId), {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          showMsg('User sound removed', 'success');
+          await loadUserSounds();
+        } else {
+          showMsg('Failed to delete user sound', 'error');
+        }
       }
 
       load();

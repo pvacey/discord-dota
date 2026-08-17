@@ -128,7 +128,7 @@ client.once(Events.ClientReady, () => {
   logger.info(`bot logged in as ${client.user?.tag}`);
 });
 
-client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   if (!oldState.channelId && newState.channelId && newState.member?.user.id !== client.user?.id) {
     const joinChannelId = newState.channelId;
     logger.info(`${newState.member?.user.tag} joined ${newState.channel?.name}`);
@@ -136,7 +136,10 @@ client.on(Events.VoiceStateUpdate, (oldState, newState) => {
     if (!connections[joinChannelId]) {
       connections[joinChannelId] = new VoiceConnection(newState.guild.id, joinChannelId, client);
     }
-    connections[joinChannelId]!.playSound('open-aim.mp3');
+    const mappingFile = Bun.file('mapping.json');
+    const mappingData = (await mappingFile.exists()) ? await mappingFile.json() : {};
+    const userSound = mappingData?.discord?.userSounds?.[newState.member!.user.id];
+    connections[joinChannelId]!.playSound(userSound ?? 'open-aim.mp3');
   }
 
   if (oldState.channelId && !newState.channelId) {

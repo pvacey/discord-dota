@@ -227,6 +227,45 @@ app.put('/api/mappings', async (c) => {
   return c.json({ success: true });
 });
 
+app.get('/api/discord/user-sounds', async (c) => {
+  const f = Bun.file('mapping.json');
+  const data = (await f.json()) as MappingConfig;
+  return c.json(data.discord?.userSounds ?? {});
+});
+
+app.put('/api/discord/user-sounds/:userId', async (c) => {
+  const userId = c.req.param('userId');
+  const { sound } = (await c.req.json()) as { sound: string };
+  const f = Bun.file('mapping.json');
+  const data = (await f.json()) as MappingConfig;
+  if (!data.discord) {
+    data.discord = {};
+  }
+  if (!data.discord.userSounds) {
+    data.discord.userSounds = {};
+  }
+  data.discord.userSounds[userId] = sound;
+  await Bun.write('mapping.json', JSON.stringify(data, null, 2));
+  return c.json({ success: true });
+});
+
+app.delete('/api/discord/user-sounds/:userId', async (c) => {
+  const userId = c.req.param('userId');
+  const f = Bun.file('mapping.json');
+  const data = (await f.json()) as MappingConfig;
+  if (data.discord?.userSounds) {
+    delete data.discord.userSounds[userId];
+    if (Object.keys(data.discord.userSounds).length === 0) {
+      delete data.discord.userSounds;
+    }
+    if (Object.keys(data.discord).length === 0) {
+      delete data.discord;
+    }
+  }
+  await Bun.write('mapping.json', JSON.stringify(data, null, 2));
+  return c.json({ success: true });
+});
+
 app.get('/api/sounds', async (c) => {
   const sounds = await getSoundFiles();
   return c.json(sounds);
