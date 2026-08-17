@@ -1,5 +1,3 @@
-// oxlint-disable-next-line no-unassigned-import
-import './telemetry.js';
 import { startClickHouse } from './clickhouse.js';
 import { startDiscord } from './discord.js';
 import logger from './logger.js';
