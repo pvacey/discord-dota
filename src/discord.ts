@@ -114,13 +114,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     logger.error(error);
     await (interaction.replied || interaction.deferred
       ? interaction.followUp({
-          content: 'There was an error while executing this command!',
-          flags: MessageFlags.Ephemeral,
-        })
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      })
       : interaction.reply({
-          content: 'There was an error while executing this command!',
-          flags: MessageFlags.Ephemeral,
-        }));
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      }));
   }
 });
 
@@ -131,7 +131,7 @@ client.once(Events.ClientReady, () => {
 client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
   if (!oldState.channelId && newState.channelId && newState.member?.user.id !== client.user?.id) {
     const joinChannelId = newState.channelId;
-    logger.info(`${newState.member?.user.tag} joined ${newState.channel?.name}`);
+    logger.info(`${newState.member?.user.tag} (${newState.member?.user.id}) joined ${newState.channel?.name}`);
 
     if (!connections[joinChannelId]) {
       connections[joinChannelId] = new VoiceConnection(newState.guild.id, joinChannelId, client);
@@ -144,7 +144,7 @@ client.on(Events.VoiceStateUpdate, async (oldState, newState) => {
 
   if (oldState.channelId && !newState.channelId) {
     const leaveChannelId = oldState.channelId;
-    logger.info(`${oldState.member?.user.tag} left ${oldState.channel?.name}`);
+    logger.info(`${oldState.member?.user.tag} (${oldState.member?.user.id}) left ${oldState.channel?.name}`);
     if (oldState.channel?.members.size === 1 && connections[leaveChannelId]) {
       connections[leaveChannelId]!.connection.destroy();
       delete connections[leaveChannelId];
