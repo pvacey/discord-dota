@@ -540,6 +540,46 @@
         }
       }
 
+      .member-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        border-top: none;
+        border-radius: 0 0 2px 2px;
+        max-height: 240px;
+        overflow-y: auto;
+        z-index: 100;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .member-dropdown.open {
+        display: block;
+      }
+      .member-dropdown li {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: var(--text);
+        cursor: pointer;
+        border-bottom: 1px solid var(--border);
+      }
+      .member-dropdown li:last-child {
+        border-bottom: none;
+      }
+      .member-dropdown li:hover,
+      .member-dropdown li.highlighted {
+        background: rgba(255, 175, 0, 0.1);
+        color: var(--accent);
+      }
+      .member-dropdown li.no-results {
+        color: var(--text-muted);
+        cursor: default;
+      }
+
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   </head>
@@ -578,9 +618,11 @@
           <h3>Add User Sound</h3>
           <div style="margin-top: 20px">
             <div class="field-group">
-              <div class="field">
-                <label>Discord User ID</label>
-                <input type="text" id="newUserId" placeholder="e.g. 123456789" />
+              <div class="field" style="position: relative;">
+                <label>Discord User</label>
+                <input type="text" id="newUserSearch" placeholder="Search by username..." autocomplete="off" />
+                <input type="hidden" id="newUserId" />
+                <ul id="memberDropdown" class="member-dropdown"></ul>
               </div>
               <div class="field">
                 <label>Sound</label>
@@ -802,8 +844,9 @@
         const res = await fetch('/api/mappings');
         mappings = await res.json();
         originalMappings = JSON.parse(JSON.stringify(mappings));
-        await loadSounds();
+        await Promise.all([loadSounds(), loadMembers()]);
         await loadUserSounds();
+        initMemberAutocomplete();
         render();
       }
 
@@ -1000,6 +1043,92 @@
       }
 
       let userSounds = {};
+      let members = [];
+      let memberMap = {};
+
+      async function loadMembers() {
+        try {
+          const res = await fetch('/api/discord/members');
+          if (res.ok) {
+            members = await res.json();
+            memberMap = Object.fromEntries(members.map(m => [m.id, m.username]));
+          }
+        } catch (e) {
+          console.error('Failed to load members', e);
+        }
+      }
+
+      function initMemberAutocomplete() {
+        const searchInput = document.getElementById('newUserSearch');
+        const hiddenInput = document.getElementById('newUserId');
+        const dropdown = document.getElementById('memberDropdown');
+        let highlightedIdx = -1;
+
+        function renderDropdown(filter) {
+          const query = (filter || '').toLowerCase();
+          const matches = query
+            ? members.filter(m => m.username.toLowerCase().includes(query)).slice(0, 10)
+            : members.slice(0, 10);
+
+          if (matches.length === 0) {
+            dropdown.innerHTML = '<li class="no-results">No members found</li>';
+          } else {
+            dropdown.innerHTML = matches.map((m, i) =>
+              `<li data-id="${m.id}" data-username="${m.username}" class="${i === highlightedIdx ? 'highlighted' : ''}">${m.username}</li>`
+            ).join('');
+          }
+          dropdown.classList.add('open');
+        }
+
+        searchInput.addEventListener('input', () => {
+          hiddenInput.value = '';
+          highlightedIdx = -1;
+          renderDropdown(searchInput.value);
+        });
+
+        searchInput.addEventListener('focus', () => {
+          highlightedIdx = -1;
+          renderDropdown(searchInput.value);
+        });
+
+        dropdown.addEventListener('click', (e) => {
+          const li = e.target.closest('li[data-id]');
+          if (!li) return;
+          hiddenInput.value = li.dataset.id;
+          searchInput.value = li.dataset.username;
+          dropdown.classList.remove('open');
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+          const items = dropdown.querySelectorAll('li[data-id]');
+          if (!items.length) return;
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+            renderDropdown(searchInput.value);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            highlightedIdx = Math.max(highlightedIdx - 1, 0);
+            renderDropdown(searchInput.value);
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIdx >= 0 && items[highlightedIdx]) {
+              hiddenInput.value = items[highlightedIdx].dataset.id;
+              searchInput.value = items[highlightedIdx].dataset.username;
+              dropdown.classList.remove('open');
+            }
+          } else if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.field[style]')) {
+            dropdown.classList.remove('open');
+          }
+        });
+      }
 
       async function loadUserSounds() {
         const res = await fetch('/api/discord/user-sounds');
@@ -1025,9 +1154,11 @@
           list.innerHTML = '<div class="empty">No user sounds configured. All users play open-aim.mp3 by default.</div>';
           return;
         }
-        list.innerHTML = entries.map(([userId, sound]) => `
+        list.innerHTML = entries.map(([userId, sound]) => {
+          const displayName = memberMap[userId] || `${userId} (left server)`;
+          return `
           <div class="sound-item">
-            <span class="sound-name">${userId}</span>
+            <span class="sound-name">${displayName}</span>
             <select onchange="updateUserSound('${userId}', this.value)" style="flex: 1;">
               <option value="">Select a sound...</option>
               ${sounds.map(s => `<option value="${s}" ${sound === s ? 'selected' : ''}>${s}</option>`).join('')}
@@ -1037,7 +1168,7 @@
               <button class="btn-icon danger" onclick="deleteUserSound('${userId}')" title="Delete">✕</button>
             </div>
           </div>
-        `).join('');
+        `}).join('');
       }
 
       async function addUserSound() {
@@ -1055,6 +1186,7 @@
         if (res.ok) {
           showMsg('User sound added', 'success');
           document.getElementById('newUserId').value = '';
+          document.getElementById('newUserSearch').value = '';
           document.getElementById('newUserSound').value = '';
           await loadUserSounds();
         } else {

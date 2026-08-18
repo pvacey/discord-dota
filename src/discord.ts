@@ -25,6 +25,34 @@ import type { BotClient, Command } from './types.js';
 
 export const connections: Record<string, VoiceConnection> = {};
 
+const MEMBER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+interface CachedMember {
+  id: string;
+  username: string;
+}
+
+let memberCache: CachedMember[] | null = null;
+let memberCacheTime = 0;
+
+export async function getGuildMembers(): Promise<CachedMember[]> {
+  if (memberCache && Date.now() - memberCacheTime < MEMBER_CACHE_TTL) {
+    return memberCache;
+  }
+
+  const guild = client.guilds.cache.first();
+  if (!guild) {
+    throw new Error('Bot is not in any guild');
+  }
+
+  const members = await guild.members.fetch();
+  memberCache = members
+    .map((m) => ({ id: m.user.id, username: m.user.username }))
+    .toSorted((a, b) => a.username.localeCompare(b.username));
+  memberCacheTime = Date.now();
+  return memberCache;
+}
+
 const SOUNDS_DIR = 'sounds/';
 
 export class VoiceConnection {
@@ -73,6 +101,7 @@ export const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMembers,
   ],
 }) as BotClient;
 
@@ -114,13 +143,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     logger.error(error);
     await (interaction.replied || interaction.deferred
       ? interaction.followUp({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      })
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        })
       : interaction.reply({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      }));
+          content: 'There was an error while executing this command!',
+          flags: MessageFlags.Ephemeral,
+        }));
   }
 });
 

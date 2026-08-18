@@ -3,7 +3,7 @@ import { readdir } from 'fs/promises';
 import { Hono } from 'hono';
 
 import { logEvent, logRawRequest } from './clickhouse.js';
-import { connections } from './discord.js';
+import { connections, getGuildMembers } from './discord.js';
 import logger from './logger.js';
 import type { GameEvent, GameEventContext, MappingConfig, MappingEntry, Settings } from './types.js';
 
@@ -264,6 +264,16 @@ app.delete('/api/discord/user-sounds/:userId', async (c) => {
   }
   await Bun.write('mapping.json', JSON.stringify(data, null, 2));
   return c.json({ success: true });
+});
+
+app.get('/api/discord/members', async (c) => {
+  try {
+    const members = await getGuildMembers();
+    return c.json(members);
+  } catch (error) {
+    logger.error(error, 'failed to fetch guild members');
+    return c.json({ error: 'Failed to fetch members' }, 500);
+  }
 });
 
 app.get('/api/sounds', async (c) => {
