@@ -64,10 +64,20 @@ const gameSummary = async (matchID: number): Promise<void> => {
 
       setTimeout(async () => {
         suppressReport = false;
-        const response = await fetch(`http://api.opendota.com/api/request/${matchID}`, {
+        let response = await fetch(`http://api.opendota.com/api/request/${matchID}`, {
           method: 'POST',
         });
         logger.info(`opendota parse request for matchID=${matchID} http_status=${response.status}`);
+        response = await fetch('https://fortune.explosivejuice.com/dota/match-result', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            match_id: matchID
+          })
+        });
+        logger.info(`sent receipt print request for matchID=${matchID} http_status=${response.status}`);
       }, 5000);
     }
   }
