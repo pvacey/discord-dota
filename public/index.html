@@ -177,16 +177,36 @@
         padding-right: 32px;
       }
       input[type="checkbox"] {
+        -webkit-appearance: none;
+        appearance: none;
         width: 18px;
         height: 18px;
-        accent-color: var(--accent);
         cursor: pointer;
         padding: 0;
         background: var(--input-bg);
         border: 1px solid var(--border);
+        border-radius: 2px;
+        position: relative;
+        transition: all 0.15s;
       }
       input[type="checkbox"]:not(:checked) {
-        opacity: 0.4;
+        opacity: 0.5;
+      }
+      input[type="checkbox"]:checked {
+        background: var(--accent);
+        border-color: var(--accent);
+        box-shadow: 0 0 8px rgba(255, 175, 0, 0.4);
+      }
+      input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 6px;
+        height: 10px;
+        border: solid var(--bg);
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
       }
       input:focus,
       select:focus {
