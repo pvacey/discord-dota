@@ -520,6 +520,11 @@
         border-color: var(--accent);
         box-shadow: var(--glow);
       }
+      .upload-area.dragover {
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+        box-shadow: var(--glow-strong);
+      }
       .upload-area input[type="file"] {
         display: none;
       }
@@ -625,10 +630,10 @@
       <div id="tab-sounds" class="tab-content">
         <div class="card">
           <h3>Upload Sound</h3>
-          <div class="upload-area" onclick="document.getElementById('soundFile').click()">
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('soundFile').click()">
             <label class="upload-label">
               <input type="file" id="soundFile" accept=".mp3" onchange="uploadSound()" />
-              Click to upload MP3 (max 10MB)
+              Click or drag & drop MP3 (max 10MB)
             </label>
           </div>
           <h3>Sound Files</h3>
@@ -848,9 +853,9 @@
         }
       }
 
-      async function uploadSound() {
+      async function uploadSound(file) {
         const fileInput = document.getElementById("soundFile");
-        const file = fileInput.files[0];
+        file = file || fileInput.files[0];
         if (!file) return;
 
         const formData = new FormData();
@@ -870,6 +875,26 @@
         }
         fileInput.value = "";
       }
+
+      const uploadArea = document.getElementById("uploadArea");
+      uploadArea.addEventListener("dragenter", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+      uploadArea.addEventListener("dragleave", (e) => {
+        if (uploadArea.contains(e.relatedTarget)) return;
+        uploadArea.classList.remove("dragover");
+      });
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file) uploadSound(file);
+      });
 
       async function deleteSound(name) {
         if (!confirm(`Delete "${name}"?`)) return;
