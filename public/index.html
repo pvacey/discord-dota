@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mapping Editor</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="discord:component-embed" type="application/json" href="{{BASE_URL}}/discord-embed.json" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="OBSERVER WARD — Dota 2 Discord Sound Bot" />
+    <meta
+      property="og:description"
+      content="Dota 2 GSI → Discord soundboard. Maps game events (kills, deaths, streaks…) to MP3 clips, plays per-user voice-join sounds, and posts post-game match links."
+    />
+    <meta
+      property="og:image"
+      content="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
+    />
+    <meta property="og:url" content="{{BASE_URL}}/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="OBSERVER WARD — Dota 2 Discord Sound Bot" />
+    <meta
+      name="twitter:description"
+      content="Dota 2 GSI → Discord soundboard. Maps game events (kills, deaths, streaks…) to MP3 clips, plays per-user voice-join sounds, and posts post-game match links."
+    />
+    <meta
+      name="twitter:image"
+      content="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <style>
@@ -812,19 +834,19 @@
 
       async function playInDiscord(name) {
         try {
-          const res = await fetch('/api/sounds/' + encodeURIComponent(name) + '/play', { method: 'POST' });
+          const res = await fetch("/api/sounds/" + encodeURIComponent(name) + "/play", { method: "POST" });
           if (!res.ok) {
-            showMsg('Failed to play in Discord', 'error');
+            showMsg("Failed to play in Discord", "error");
             return;
           }
           const { played } = await res.json();
           if (played > 0) {
-            showMsg(`Played in ${played} voice channel${played === 1 ? '' : 's'}`, 'success');
+            showMsg(`Played in ${played} voice channel${played === 1 ? "" : "s"}`, "success");
           } else {
-            showMsg('No active voice connections', 'error');
+            showMsg("No active voice connections", "error");
           }
         } catch {
-          showMsg('Failed to play in Discord', 'error');
+          showMsg("Failed to play in Discord", "error");
         }
       }
 

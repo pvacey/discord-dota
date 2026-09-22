@@ -33,9 +33,30 @@ app.get("/favicon.png", async (c) => {
   });
 });
 
+const DISCORD_EMBED_MAX_BYTES = 3000;
+
+function baseUrl(host: string | undefined, proto: string | undefined): string {
+  return `${proto ?? "https"}://${host ?? "localhost:3000"}`;
+}
+
+app.get("/discord-embed.json", async (c) => {
+  const file = Bun.file("./public/discord-embed.json");
+  const raw = await file.text();
+  if (new TextEncoder().encode(raw).length > DISCORD_EMBED_MAX_BYTES) {
+    logger.error("discord-embed.json exceeds Discord's 3000-byte component embed limit");
+    return c.json({ error: "Discord embed payload exceeds 3000 bytes" }, 500);
+  }
+  const base = baseUrl(c.req.header("host"), c.req.header("x-forwarded-proto"));
+  return c.body(raw.replaceAll("{{BASE_URL}}", base), {
+    headers: { "Content-Type": "application/json; charset=utf-8" },
+  });
+});
+
 app.get("/", async (c) => {
   const file = Bun.file("./public/index.html");
-  return c.html(await file.text());
+  const html = await file.text();
+  const base = baseUrl(c.req.header("host"), c.req.header("x-forwarded-proto"));
+  return c.html(html.replaceAll("{{BASE_URL}}", base));
 });
 
 app.post("/", async (c) => {
