@@ -1,0 +1,28 @@
+{
+  "component": {
+    "type": 17,
+    "accent_color": 16756480,
+    "components": [
+      {
+        "type": 9,
+        "components": [
+          {
+            "type": 10,
+            "content": "## OBSERVER WARD\nDota 2 GSI → Discord soundboard. Maps game events (kills, deaths, streaks…) to MP3 clips, plays per-user voice-join sounds, and posts post-game match links."
+          }
+        ],
+        "accessory": {
+          "type": 11,
+          "media": {
+            "url": "https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
+          }
+        }
+      },
+      { "type": 14, "divider": true, "spacing": 1 },
+      {
+        "type": 1,
+        "components": [{ "type": 2, "style": 5, "label": "Open", "url": "{{BASE_URL}}/" }]
+      }
+    ]
+  }
+}
