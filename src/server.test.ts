@@ -16,6 +16,7 @@ mock.module("@/game-event", () => ({ recursiveDiff, setMapping, handleGameEvent 
 mock.module("@/discord", () => ({ getGuildMembers, connections: {}, client: {} }));
 mock.module("@/logger", () => ({ default: logger }));
 
+const { AUTH_COOKIE_NAME, signUserJwt } = await import("@/auth");
 const { app } = await import("@/server");
 
 let originalCwd = "",
@@ -27,6 +28,7 @@ beforeEach(() => {
   process.chdir(tmpDir);
   mkdirSync("public", { recursive: true });
   writeFileSync("public/index.html", "<html></html>");
+  writeFileSync("public/login.html", "<html>login</html>");
   writeFileSync("public/favicon.png", Buffer.from([0x89, 0x50, 0x4e, 0x47]));
   writeFileSync("mapping.json", JSON.stringify({ dota: {}, discord: { userSounds: {} } }));
   mkdirSync("sounds", { recursive: true });
@@ -39,11 +41,39 @@ afterEach(() => {
 });
 
 describe("server routes", () => {
-  test("GET / returns 200 with HTML content", async () => {
+  test("GET / redirects to /login when unauthenticated", async () => {
     const res = await app.request("/");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/login");
+  });
+
+  test("GET / returns 200 with HTML content when authenticated", async () => {
+    const token = await signUserJwt({ id: "123", username: "tester", avatar: null });
+    const res = await app.request("/", {
+      headers: { Cookie: `${AUTH_COOKIE_NAME}=${token}` },
+    });
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toBe("<html></html>");
+  });
+
+  test("GET /login returns 200 with login HTML content", async () => {
+    const res = await app.request("/login");
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe("<html>login</html>");
+  });
+
+  test("GET /api/mappings returns 401 when unauthenticated", async () => {
+    const res = await app.request("/api/mappings");
+    expect(res.status).toBe(401);
+  });
+
+  test("GET /api/mappings returns 200 when authenticated", async () => {
+    const token = await signUserJwt({ id: "123", username: "tester", avatar: null });
+    const res = await app.request("/api/mappings", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(res.status).toBe(200);
   });
 
   test("GET /favicon.png returns 200 with image/png content-type", async () => {

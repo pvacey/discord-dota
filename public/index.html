@@ -608,17 +608,46 @@
         color: var(--text-muted);
         cursor: default;
       }
+
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .top-bar h1 {
+        margin-bottom: 0;
+      }
+      .auth-status {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .auth-username {
+        color: var(--text);
+        font-weight: 600;
+      }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div class="container">
-      <h1>
-        <img
-          src="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
-          alt=""
-        />OBSERVER WARD<span class="cursor">_</span>
-      </h1>
+      <div class="top-bar">
+        <h1>
+          <img
+            src="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
+            alt=""
+          />OBSERVER WARD<span class="cursor">_</span>
+        </h1>
+        <div class="auth-status">
+          <span id="authUser" class="auth-username"></span>
+          <a href="/auth/logout" style="text-decoration: none"><button type="button">Logout</button></a>
+        </div>
+      </div>
       <div id="msg" class="msg"></div>
 
       <div class="tabs">
@@ -837,19 +866,19 @@
 
       async function playInDiscord(name) {
         try {
-          const res = await fetch('/api/sounds/' + encodeURIComponent(name) + '/play', { method: 'POST' });
+          const res = await fetch("/api/sounds/" + encodeURIComponent(name) + "/play", { method: "POST" });
           if (!res.ok) {
-            showMsg('Failed to play in Discord', 'error');
+            showMsg("Failed to play in Discord", "error");
             return;
           }
           const { played } = await res.json();
           if (played > 0) {
-            showMsg(`Played in ${played} voice channel${played === 1 ? '' : 's'}`, 'success');
+            showMsg(`Played in ${played} voice channel${played === 1 ? "" : "s"}`, "success");
           } else {
-            showMsg('No active voice connections', 'error');
+            showMsg("No active voice connections", "error");
           }
         } catch {
-          showMsg('Failed to play in Discord', 'error');
+          showMsg("Failed to play in Discord", "error");
         }
       }
 
@@ -916,7 +945,24 @@
       let originalMappings = { dota: {} };
 
       async function load() {
+        const meRes = await fetch("/api/auth/me");
+        if (meRes.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        if (meRes.ok) {
+          const user = await meRes.json();
+          const authUserEl = document.getElementById("authUser");
+          if (authUserEl && user.username) {
+            authUserEl.textContent = `@${user.username}`;
+          }
+        }
+
         const res = await fetch("/api/mappings");
+        if (res.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
         mappings = await res.json();
         originalMappings = JSON.parse(JSON.stringify(mappings));
         await Promise.all([loadSounds(), loadMembers()]);
