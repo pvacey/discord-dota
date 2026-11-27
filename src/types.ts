@@ -48,3 +48,10 @@ export interface ClickHouseRow {
 export interface BotClient extends Client {
   commands: Collection<string, Command>;
 }
+
+export interface AuthUser {
+  sub: string;
+  username: string;
+  avatar: string | null;
+  exp: number;
+}

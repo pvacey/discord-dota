@@ -1,14 +1,16 @@
 import { Hono } from "hono";
 
+import { extractToken, requireAuth, verifyUserJwt } from "@/auth";
 import { logRawRequest } from "@/clickhouse";
 import { recursiveDiff } from "@/game-event";
 import logger from "@/logger";
+import authRoutes from "@/routes/auth";
 import discordRoutes from "@/routes/discord";
 import mappingsRoutes from "@/routes/mappings";
 import soundsRoutes from "@/routes/sounds";
-import type { GameEventContext } from "@/types";
+import type { AuthUser, GameEventContext } from "@/types";
 
-export const app = new Hono();
+export const app = new Hono<{ Variables: { user: AuthUser } }>();
 
 app.use("*", async (c, next) => {
   const start = performance.now();
@@ -22,6 +24,23 @@ app.use("*", async (c, next) => {
   }
 });
 
+app.route("/auth", authRoutes);
+
+app.get("/login", async (c) => {
+  if (!c.req.query("error")) {
+    const token = extractToken(c);
+    if (token && (await verifyUserJwt(token))) {
+      return c.redirect("/");
+    }
+  }
+  const file = Bun.file("./public/login.html");
+  return c.html(await file.text());
+});
+
+app.use("/api/*", requireAuth);
+
+app.get("/api/auth/me", (c) => c.json(c.get("user")));
+
 app.route("/api", mappingsRoutes);
 app.route("/api/discord", discordRoutes);
 app.route("/api/sounds", soundsRoutes);
@@ -34,6 +53,10 @@ app.get("/favicon.png", async (c) => {
 });
 
 app.get("/", async (c) => {
+  const token = extractToken(c);
+  if (!token || !(await verifyUserJwt(token))) {
+    return c.redirect("/login");
+  }
   const file = Bun.file("./public/index.html");
   return c.html(await file.text());
 });

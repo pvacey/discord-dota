@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — Observer Ward</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+    <style>
+      @font-face {
+        font-family: "Reaver";
+        src: url("https://cdn.steamstatic.com/apps/dota2/fonts/Reaver-Regular.ttf") format("truetype");
+        font-weight: normal;
+        font-style: normal;
+      }
+      :root {
+        --bg: #1d1d1d;
+        --card-bg: #242424;
+        --input-bg: #161616;
+        --border: #3a3020;
+        --text: #ffaf00;
+        --text-muted: #8a6e2f;
+        --accent: #ffaf00;
+        --danger: #fb4934;
+        --glow: 0 0 10px rgba(255, 175, 0, 0.3);
+        --glow-strong: 0 0 20px rgba(255, 175, 0, 0.4);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
+      }
+      body {
+        font-family: "Share Tech Mono", "Fira Code", "SF Mono", "Courier New", monospace;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        background-image: repeating-linear-gradient(
+          0deg,
+          rgba(255, 175, 0, 0.03) 0px,
+          rgba(255, 175, 0, 0.03) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      }
+      .login-container {
+        width: 100%;
+        max-width: 460px;
+        text-align: center;
+      }
+      h1 {
+        font-size: 40px;
+        font-family: "Reaver", sans-serif;
+        font-weight: normal;
+        margin-bottom: 28px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        text-shadow: var(--glow-strong);
+      }
+      h1 img {
+        height: 54px;
+        filter: invert(48%) sepia(89%) saturate(2000%) hue-rotate(5deg) brightness(110%) drop-shadow(var(--glow));
+      }
+      .cursor {
+        animation: blink 1s step-end infinite;
+        font-weight: normal;
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 36px 28px;
+      }
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 12px;
+      }
+      p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.6;
+        margin-bottom: 24px;
+      }
+      .error-banner {
+        display: none;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        border-radius: 2px;
+        background: rgba(251, 73, 52, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+        font-size: 12px;
+        line-height: 1.5;
+        text-align: left;
+      }
+      .error-banner.visible {
+        display: block;
+      }
+      .btn-discord {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 24px;
+        border-radius: 2px;
+        border: 1px solid var(--accent);
+        background: var(--input-bg);
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        box-shadow: var(--glow);
+        transition: all 0.15s;
+      }
+      .btn-discord:hover {
+        background: rgba(255, 175, 0, 0.1);
+        box-shadow: var(--glow-strong);
+        text-shadow: var(--glow);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-container">
+      <h1>
+        <img
+          src="https://cdn.steamstatic.com/apps/dota2/images/dota_react/global/dota2_logo_symbol.png"
+          alt=""
+        />OBSERVER WARD<span class="cursor">_</span>
+      </h1>
+      <div class="card">
+        <h3>Authentication Required</h3>
+        <p>Sign in with Discord. Only members of the authorized Discord server can access this dashboard.</p>
+        <div id="errorBanner" class="error-banner"></div>
+        <a href="/auth/discord" class="btn-discord">Login with Discord</a>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const error = params.get("error");
+      const errorBanner = document.getElementById("errorBanner");
+
+      const errorMessages = {
+        unauthorized: "Access denied: You are not a member of the authorized Discord server.",
+        invalid_state: "Authentication session expired or invalid. Please try again.",
+        oauth_failed: "Failed to authenticate with Discord. Please try again.",
+        config: "Server OAuth configuration is incomplete.",
+      };
+
+      if (error && errorBanner) {
+        errorBanner.textContent = errorMessages[error] || "Authentication failed.";
+        errorBanner.classList.add("visible");
+      }
+    </script>
+  </body>
+</html>
